@@ -1,16 +1,8 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-
-function App() {
+export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-      </Routes>
-    </Router>
-  );
+    <div className="h-screen flex items-center justify-center bg-blue-500 text-white text-3xl font-bold">
+      Tailwind is Working 🎨
+    </div>
+  )
 }
 
-export default App;
