@@ -1,4 +1,6 @@
 // server/index.ts
+import cors from "cors";
+// allow frontend (Vite) to talk to backend
 import "dotenv/config"; // <-- must be first
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
@@ -14,6 +16,10 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
 
 app.use(
   express.json({

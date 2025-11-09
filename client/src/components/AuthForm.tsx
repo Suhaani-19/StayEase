@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Home, Mail, Lock, User } from "lucide-react";
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -15,13 +15,53 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [, setLocation] = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === "login") {
-      console.log("Login:", { email, password });
-    } else {
-      console.log("Register:", { name, email, password, confirmPassword });
+    setError("");
+    setLoading(true);
+
+    try {
+      if (mode === "register") {
+        if (password !== confirmPassword) {
+          setError("Passwords do not match");
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch("http://localhost:5000/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Signup failed");
+
+        localStorage.setItem("token", data.token);
+        alert("Signup successful!");
+        setLocation("/login"); // redirect to login
+      } else {
+        const res = await fetch("http://localhost:5000/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Login failed");
+
+        localStorage.setItem("token", data.token);
+        alert("Login successful!");
+        setLocation("/"); // redirect to homepage
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,8 +154,22 @@ export default function AuthForm({ mode }: AuthFormProps) {
             </div>
           )}
 
-          <Button type="submit" className="w-full" size="lg" data-testid="button-submit">
-            {mode === "login" ? "Sign In" : "Create Account"}
+          {error && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={loading}
+            data-testid="button-submit"
+          >
+            {loading
+              ? "Please wait..."
+              : mode === "login"
+              ? "Sign In"
+              : "Create Account"}
           </Button>
         </form>
 
@@ -123,14 +177,22 @@ export default function AuthForm({ mode }: AuthFormProps) {
           {mode === "login" ? (
             <p className="text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/register" className="text-primary font-medium hover:underline" data-testid="link-register">
+              <Link
+                href="/register"
+                className="text-primary font-medium hover:underline"
+                data-testid="link-register"
+              >
                 Sign up
               </Link>
             </p>
           ) : (
             <p className="text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/login" className="text-primary font-medium hover:underline" data-testid="link-login">
+              <Link
+                href="/login"
+                className="text-primary font-medium hover:underline"
+                data-testid="link-login"
+              >
                 Sign in
               </Link>
             </p>
