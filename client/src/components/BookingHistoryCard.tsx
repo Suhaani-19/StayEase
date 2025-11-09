@@ -1,0 +1,104 @@
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Calendar, Users, MoreVertical } from "lucide-react";
+
+interface BookingHistoryCardProps {
+  id: string;
+  propertyName: string;
+  location: string;
+  image: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  totalPrice: number;
+  status: "upcoming" | "completed" | "cancelled";
+}
+
+export default function BookingHistoryCard({
+  id,
+  propertyName,
+  location,
+  image,
+  checkIn,
+  checkOut,
+  guests,
+  totalPrice,
+  status,
+}: BookingHistoryCardProps) {
+  const statusColors = {
+    upcoming: "bg-primary/10 text-primary",
+    completed: "bg-green-500/10 text-green-700 dark:text-green-400",
+    cancelled: "bg-destructive/10 text-destructive",
+  };
+
+  const handleViewDetails = () => {
+    console.log("View booking details:", id);
+  };
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-4 p-4">
+        <div className="relative w-full md:w-48 h-48 md:h-32 flex-shrink-0 overflow-hidden rounded-md">
+          <img src={image} alt={propertyName} className="w-full h-full object-cover" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <h3 className="font-semibold text-lg mb-1 line-clamp-1" data-testid={`text-property-${id}`}>
+                {propertyName}
+              </h3>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span className="line-clamp-1">{location}</span>
+              </div>
+            </div>
+            <Badge className={statusColors[status]} data-testid={`badge-status-${id}`}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <div className="text-muted-foreground">Check-in</div>
+                <div className="font-medium" data-testid={`text-checkin-${id}`}>{checkIn}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <div className="text-muted-foreground">Check-out</div>
+                <div className="font-medium" data-testid={`text-checkout-${id}`}>{checkOut}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <div className="text-muted-foreground">Guests</div>
+                <div className="font-medium" data-testid={`text-guests-${id}`}>{guests}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <span className="text-muted-foreground text-sm">Total: </span>
+              <span className="text-xl font-semibold" data-testid={`text-total-${id}`}>${totalPrice}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleViewDetails} data-testid={`button-view-${id}`}>
+                View Details
+              </Button>
+              <Button variant="ghost" size="icon" data-testid={`button-more-${id}`}>
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
