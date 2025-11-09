@@ -1,38 +1,40 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+// server/storage.ts
+import { Schema, model, Document } from "mongoose";
 
-// modify the interface with any CRUD methods
-// you might need
-
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+// USER MODEL
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+const UserSchema = new Schema<IUser>(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+  },
+  { timestamps: true }
+);
 
-  constructor() {
-    this.users = new Map();
-  }
+export const User = model<IUser>("User", UserSchema);
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
+// STAY MODEL
+export interface IStay extends Document {
+  title: string;
+  location: string;
+  price: number;
+  owner: Schema.Types.ObjectId;
 }
 
-export const storage = new MemStorage();
+const StaySchema = new Schema<IStay>(
+  {
+    title: { type: String, required: true },
+    location: String,
+    price: Number,
+    owner: { type: Schema.Types.ObjectId, ref: "User" },
+  },
+  { timestamps: true }
+);
+
+export const Stay = model<IStay>("Stay", StaySchema);
