@@ -11,6 +11,6 @@
       "@assets/*": ["./attached_assets/*"]
     }
   },
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
+  "include": ["client/src/**/*", "shared/**/*", "server/**/*", "client/vite.config.ts"],
   "exclude": ["node_modules", "build", "dist"]
 }
