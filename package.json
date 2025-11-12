@@ -9,7 +9,7 @@
     "dev:client": "cd client && vite",
     "dev:server": "cd server && tsx index.ts",
     "start": "cd api && NODE_ENV=production node dist/index.js",
-    "build": "vite build",
+    "build": "cd client && vite build",
     "check": "tsc",
     "db:push": "cd api && drizzle-kit push"
   },
