@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { User, Stay } from "./storage";
+import { User, Stay } from "./storage.js"; // ✅ add .js for ESM
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ------------------------------
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ------------------------------
-  // EXISTING ROUTES (stays, users)
+  // STAYS & USERS ROUTES
   // ------------------------------
 
   app.get("/api/stays", async (_req, res) => {
