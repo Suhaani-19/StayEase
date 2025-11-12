@@ -5,6 +5,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import dotenv from "dotenv";
+import path from "path";
 import { connectDB } from "./db.js";
 
 dotenv.config();
@@ -77,7 +78,9 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
-
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+});
   // Start server
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen(port, "0.0.0.0", () => {
