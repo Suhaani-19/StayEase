@@ -8,8 +8,8 @@
     "dev": "ts-node-esm server/index.ts",
     "dev:client": "cd client && vite",
     "dev:server": "cd server && tsx index.ts",
-    "build": "cd client && vite build && cd ../api && esbuild index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cd api && NODE_ENV=production node dist/index.js",
+    "build": "vite build",
     "check": "tsc",
     "db:push": "cd api && drizzle-kit push"
   },
