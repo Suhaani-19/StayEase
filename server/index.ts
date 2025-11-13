@@ -2,19 +2,14 @@ import cors from "cors";
 import "dotenv/config"; // must be first
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
+import { setupVite, log } from "./vite.js";
 import dotenv from "dotenv";
 import path from "path";
-import { fileURLToPath } from "url";
 import { connectDB } from "./db.js";
 
 dotenv.config();
 
 const app = express();
-
-// Emulate __dirname for ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 declare module "http" {
   interface IncomingMessage {
@@ -23,17 +18,21 @@ declare module "http" {
 }
 
 // CORS middleware
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 // Body parser with raw body capture
-app.use(express.json({
-  verify: (req, _res, buf) => {
-    req.rawBody = buf;
-  },
-}));
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: false }));
 
 // Request logger
@@ -80,8 +79,8 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // Serve client/dist as static files
-    const clientDistPath = path.join(__dirname, "../client/dist");
+    // Use process.cwd() to reference the project root
+    const clientDistPath = path.join(process.cwd(), "client/dist");
     app.use(express.static(clientDistPath));
 
     // Serve index.html for all non-API routes
