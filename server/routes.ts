@@ -9,7 +9,7 @@ import { User, Stay } from "./storage.js"; // ✅ add .js for ESM
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ------------------------------
-  // ✅ AUTH ROUTES
+  // AUTH ROUTES
   // ------------------------------
 
   // Signup route
@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresIn: "1h",
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         message: "User created successfully",
         user: {
           id: newUser._id,
@@ -47,8 +47,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token,
       });
     } catch (err: any) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
+      console.error("Signup error:", err);
+      return res.status(500).json({ message: "Server error" });
     }
   });
 
@@ -56,6 +56,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
 
       const user = await User.findOne({ email });
       if (!user) {
@@ -71,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresIn: "1h",
       });
 
-      res.json({
+      return res.json({
         message: "Login successful",
         user: {
           id: user._id,
@@ -81,43 +85,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token,
       });
     } catch (err: any) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
+      console.error("Login error:", err);
+      return res.status(500).json({ message: "Server error" });
     }
   });
 
   // ------------------------------
-  // STAYS & USERS ROUTES
+  // STAYS ROUTES
   // ------------------------------
 
   app.get("/api/stays", async (_req, res) => {
-    const stays = await Stay.find().populate("owner");
-    res.json(stays);
+    try {
+      const stays = await Stay.find().populate("owner");
+      return res.json(stays);
+    } catch (err: any) {
+      console.error("Get stays error:", err);
+      return res.status(500).json({ message: "Server error" });
+    }
   });
 
   app.post("/api/stays", async (req, res) => {
     try {
       const stay = await Stay.create(req.body);
-      res.status(201).json(stay);
+      return res.status(201).json(stay);
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Create stay error:", err);
+      return res.status(400).json({ message: err.message });
     }
   });
 
+  // ------------------------------
+  // USERS ROUTES
+  // ------------------------------
+
   app.get("/api/users", async (_req, res) => {
-    const users = await User.find();
-    res.json(users);
+    try {
+      const users = await User.find();
+      return res.json(users);
+    } catch (err: any) {
+      console.error("Get users error:", err);
+      return res.status(500).json({ message: "Server error" });
+    }
   });
 
   app.post("/api/users", async (req, res) => {
     try {
       const user = await User.create(req.body);
-      res.status(201).json(user);
+      return res.status(201).json(user);
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      console.error("Create user error:", err);
+      return res.status(400).json({ message: err.message });
     }
   });
 
+  // ------------------------------
+  // Create HTTP server for Vite HMR
   // ------------------------------
   const httpServer = createServer(app);
   return httpServer;
