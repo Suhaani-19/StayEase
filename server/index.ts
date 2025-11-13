@@ -1,21 +1,19 @@
+// server/index.ts
 import cors from "cors";
 import "dotenv/config"; // must be first
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 import { connectDB } from "./db.js";
+import { CLIENT_PATH, CLIENT_DIST, CLIENT_INDEX } from "./paths.js";
+
 
 dotenv.config();
 
 const app = express();
 
-// Emulate __dirname for ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// Extend IncomingMessage to store raw body
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -76,17 +74,12 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Vite dev server or production static serving
+  // Use Vite dev server in development, static client in production
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // ✅ Correct path to client/dist
-    const clientDistPath = path.join(__dirname, "../../client/dist");
-    app.use(express.static(clientDistPath));
-
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(clientDistPath, "index.html"));
-    });
+    // ✅ Use constants from paths.js
+    serveStatic(app);
   }
 
   // Start server
