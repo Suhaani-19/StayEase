@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Home, Mail, Lock, User } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { API_URL } from "@/lib/api";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -32,7 +33,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        const res = await fetch("http://localhost:5000/api/auth/signup", {
+        const res = await fetch(`${API_URL}/api/auth/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, password }),
@@ -43,9 +44,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         localStorage.setItem("token", data.token);
         alert("Signup successful!");
-        setLocation("/login"); // redirect to login
+        setLocation("/login");
       } else {
-        const res = await fetch("http://localhost:5000/api/auth/login", {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -56,7 +57,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         localStorage.setItem("token", data.token);
         alert("Login successful!");
-        setLocation("/"); // redirect to homepage
+        setLocation("/");
       }
     } catch (err: any) {
       setError(err.message);
