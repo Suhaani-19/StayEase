@@ -5,7 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Home, Mail, Lock, User } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { API_URL } from "@/lib/api";
+
+// Make sure API_URL points to your backend, e.g. "https://stayease-backend.onrender.com"
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -26,39 +28,36 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
 
     try {
-      if (mode === "register") {
-        if (password !== confirmPassword) {
-          setError("Passwords do not match");
-          setLoading(false);
-          return;
-        }
+      let endpoint = mode === "register" ? "/api/auth/signup" : "/api/auth/login";
 
-        const res = await fetch(`${API_URL}/api/auth/signup`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Signup failed");
-
-        localStorage.setItem("token", data.token);
-        alert("Signup successful!");
-        setLocation("/login");
-      } else {
-        const res = await fetch(`${API_URL}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Login failed");
-
-        localStorage.setItem("token", data.token);
-        alert("Login successful!");
-        setLocation("/");
+      if (mode === "register" && password !== confirmPassword) {
+        setError("Passwords do not match");
+        setLoading(false);
+        return;
       }
+
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          mode === "register"
+            ? { name, email, password }
+            : { email, password }
+        ),
+      });
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Invalid server response");
+      }
+
+      if (!res.ok) throw new Error(data.message || "Request failed");
+
+      localStorage.setItem("token", data.token);
+      alert(mode === "register" ? "Signup successful!" : "Login successful!");
+      setLocation(mode === "register" ? "/login" : "/");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -99,7 +98,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="pl-9"
-                  data-testid="input-name"
+                  required
                 />
               </div>
             </div>
@@ -116,7 +115,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-9"
-                data-testid="input-email"
+                required
               />
             </div>
           </div>
@@ -132,7 +131,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-9"
-                data-testid="input-password"
+                required
               />
             </div>
           </div>
@@ -149,7 +148,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-9"
-                  data-testid="input-confirm-password"
+                  required
                 />
               </div>
             </div>
@@ -164,7 +163,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
             className="w-full"
             size="lg"
             disabled={loading}
-            data-testid="button-submit"
           >
             {loading
               ? "Please wait..."
@@ -181,7 +179,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <Link
                 href="/register"
                 className="text-primary font-medium hover:underline"
-                data-testid="link-register"
               >
                 Sign up
               </Link>
@@ -192,7 +189,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <Link
                 href="/login"
                 className="text-primary font-medium hover:underline"
-                data-testid="link-login"
               >
                 Sign in
               </Link>
