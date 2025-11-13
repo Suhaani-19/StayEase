@@ -5,11 +5,16 @@ import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
 import { connectDB } from "./db.js";
 
 dotenv.config();
 
 const app = express();
+
+// Emulate __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 declare module "http" {
   interface IncomingMessage {
@@ -75,7 +80,7 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // **Serve client/dist as static files**
+    // Serve client/dist as static files
     const clientDistPath = path.join(__dirname, "../client/dist");
     app.use(express.static(clientDistPath));
 
