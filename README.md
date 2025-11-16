@@ -127,6 +127,47 @@ Backend: http://localhost:5000
 
 ---
 
+## 🧠 Proposal (Project Idea Overview)
+#### Problem:
+
+Travelers often struggle to find reliable short-term accommodations, and property owners lack an organized platform to manage listings and bookings. The process becomes inefficient, scattered, and time-consuming for both sides.
+
+#### Solution:
+
+1. StayEase provides a streamlined platform offering:
+
+2. Secure user authentication (JWT)
+
+3. Easy property listing and management
+
+4. Real-time accommodation search & filtering
+
+5. Fast booking system with history tracking
+
+6. Image upload support for property photos
+
+7. A smooth React + Express architecture for scalability
+
+#### Outcome:
+
+A reliable, user-friendly, and scalable booking platform that simplifies accommodation browsing, listing, and reservation — benefiting both travelers and property owners.
+
+#### 📜 Commands Summary
+| Task                                            | Command                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| **Clone Repository**                            | `git clone <repo-url>`                                      |
+| **Install All Dependencies**                    | `npm install`                                               |
+| **Run Full Development (Frontend + Backend)**   | `npm run dev`                                               |
+| **Run Backend Only**                            | `cd server && npm run dev:server`                           |
+| **Run Frontend Only**                           | `cd client && npm run dev:client`                           |
+| **Build Frontend**                              | `cd client && npm run build:client`                         |
+| **Build Backend**                               | `cd server && npm run build:server`                         |
+| **Start Production Server**                     | `npm start`                                                 |
+| **Deploy Backend (Render)**                     | Build: `npm run build:server` → Start: `node dist/index.js` |
+| **Deploy Frontend (Render / Vercel / Netlify)** | Build: `npm run build:client` → Publish: `client/dist`      |
+
+---
+
 ## 🧑‍💻 Contributing
 
 Pull requests and suggestions are welcome!
