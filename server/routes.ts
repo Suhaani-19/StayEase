@@ -5,14 +5,14 @@ import dotenv from "dotenv";
 dotenv.config();
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { User, Stay } from "./storage.js"; // ✅ add .js for ESM
+import { User, Stay } from "./storage.js"; // ✅ ESM import
+import listingsRouter from "./listingsRoutes.js"; // ✅ NEW: listings CRUD routes
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ------------------------------
   // AUTH ROUTES
   // ------------------------------
 
-  // Signup route
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const { name, email, password } = req.body;
@@ -52,7 +52,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Login route
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -137,6 +136,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: err.message });
     }
   });
+
+  // ------------------------------
+  // LISTINGS ROUTES (NEW)
+  // ------------------------------
+
+  app.use("/api/listings", listingsRouter);
 
   // ------------------------------
   // Create HTTP server for Vite HMR

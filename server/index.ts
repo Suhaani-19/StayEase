@@ -1,13 +1,12 @@
 // server/index.ts
 import cors from "cors";
 import "dotenv/config"; // must be first
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
+import dotenv from "dotenv";
+
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
-import dotenv from "dotenv";
 import { connectDB } from "./db.js";
-import { CLIENT_PATH, CLIENT_DIST, CLIENT_INDEX } from "./paths.js";
-
 
 dotenv.config();
 
@@ -21,17 +20,21 @@ declare module "http" {
 }
 
 // CORS middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 // Body parser with raw body capture
-app.use(express.json({
-  verify: (req, _res, buf) => {
-    req.rawBody = buf;
-  },
-}));
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: false }));
 
 // Request logger
@@ -63,10 +66,10 @@ app.use((req, res, next) => {
   // Connect MongoDB
   await connectDB();
 
-  // Register routes
+  // 1) Register API routes first (they should NOT be handled by Vite)
   const server = await registerRoutes(app);
 
-  // Error handler
+  // 2) Error handler for API routes
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -74,16 +77,17 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Use Vite dev server in development, static client in production
+  // 3) Frontend handling
+  // In development → use Vite middleware (same HTML as :5173)
+  // In production  → serve built client from /client/dist
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // ✅ Use constants from paths.js
     serveStatic(app);
   }
 
-  // Start server
-  const port = parseInt(process.env.PORT || "5000", 10);
+  // 4) Start server
+  const port = parseInt(process.env.PORT || "5013", 10);
   server.listen(port, "0.0.0.0", () => {
     log(`🚀 Server running at http://localhost:${port}`);
   });

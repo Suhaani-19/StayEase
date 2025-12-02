@@ -8,6 +8,7 @@ import { Link } from "wouter";
 import cabinImage from "@assets/generated_images/Mountain_cabin_listing_photo_0428adcd.png";
 import villaImage from "@assets/generated_images/Beachfront_villa_listing_photo_b95534bf.png";
 import ListingCard from "@/components/ListingCard";
+import AddListingForm from "../components/AddListingForm";
 
 export default function Dashboard() {
   const stats = [
@@ -44,12 +45,12 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Manage your bookings and listings</p>
             </div>
           </div>
-          <Link href="/create-listing">
-            <Button data-testid="button-create-listing">
+          <Button asChild data-testid="button-create-listing">
+            <Link href="/create-listing">
               <Plus className="h-4 w-4 mr-2" />
               Create Listing
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -58,7 +59,9 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold" data-testid={`text-${stat.label.toLowerCase().replace(/\s/g, "-")}`}>{stat.value}</p>
+                  <p className="text-3xl font-bold" data-testid={`text-${stat.label.toLowerCase().replace(/\s/g, "-")}`}>
+                    {stat.value}
+                  </p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <stat.icon className="h-6 w-6 text-primary" />
@@ -70,16 +73,29 @@ export default function Dashboard() {
 
         <Tabs defaultValue="listings" className="space-y-6">
           <TabsList data-testid="tabs-dashboard">
-            <TabsTrigger value="listings" data-testid="tab-listings">My Listings</TabsTrigger>
-            <TabsTrigger value="bookings" data-testid="tab-bookings">My Bookings</TabsTrigger>
-            <TabsTrigger value="favorites" data-testid="tab-favorites">Favorites</TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
+            <TabsTrigger value="listings" data-testid="tab-listings">
+              My Listings
+            </TabsTrigger>
+            <TabsTrigger value="bookings" data-testid="tab-bookings">
+              My Bookings
+            </TabsTrigger>
+            <TabsTrigger value="favorites" data-testid="tab-favorites">
+              Favorites
+            </TabsTrigger>
+            <TabsTrigger value="settings" data-testid="tab-settings">
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="listings" className="space-y-6">
+            {/* ✅ AddListingForm integrated here */}
+            <AddListingForm />
+            
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Your Properties</h2>
-              <Button variant="outline" data-testid="button-manage-listings">Manage All</Button>
+              <Button variant="outline" data-testid="button-manage-listings">
+                Manage All
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {myListings.map((listing) => (
@@ -92,7 +108,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Upcoming Bookings</h2>
               <Link href="/bookings">
-                <Button variant="outline" data-testid="button-view-all-bookings">View All</Button>
+                <Button variant="outline" data-testid="button-view-all-bookings">
+                  View All
+                </Button>
               </Link>
             </div>
             <Card className="p-8 text-center">

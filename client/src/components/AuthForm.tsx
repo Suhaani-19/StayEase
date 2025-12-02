@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
 // Make sure API_URL points to your backend, e.g. "https://stayease-backend.onrender.com"
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5013";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -55,7 +55,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       if (!res.ok) throw new Error(data.message || "Request failed");
 
+      // Store token and userId on successful auth
       localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.user.id);
+
       alert(mode === "register" ? "Signup successful!" : "Login successful!");
       setLocation(mode === "register" ? "/login" : "/");
     } catch (err: any) {

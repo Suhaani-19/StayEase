@@ -2,7 +2,18 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./server/db.ts",
+    "./server/index.ts",
+    "./server/paths.ts",
+    "./server/storage.ts",
+    "./server/vite.ts",
+    "./server/routes.ts",
+    "./server/tsconfig.server.json",
+    "./server/models/User.ts"
+  ],
   theme: {
     extend: {
       borderRadius: {
@@ -11,12 +22,10 @@ export default {
         sm: ".1875rem", // 3px
       },
       colors: {
-        // Base theme colors
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
-        border: "hsl(var(--border) / <alpha-value>)", // ✅ ORIGINAL border variable
+        border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
-
         card: {
           DEFAULT: "hsl(var(--card) / <alpha-value>)",
           foreground: "hsl(var(--card-foreground) / <alpha-value>)",

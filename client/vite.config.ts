@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react()], // ✅ No Tailwind plugin required
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -13,7 +13,7 @@ export default defineConfig({
   },
   root: __dirname,
   build: {
-    outDir: "dist", // <-- inside client folder
+    outDir: "dist",
     emptyOutDir: true,
   },
 });
