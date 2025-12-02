@@ -14,6 +14,13 @@ import AddListingForm from "../components/AddListingForm";
 export default function Dashboard() {
   const [userName, setUserName] = useState("User");
   const [userInitial, setUserInitial] = useState("U");
+  
+  // ✅ NEW: Real listings state
+  const [realListings, setRealListings] = useState([]);
+  const [loadingListings, setLoadingListings] = useState(true);
+
+  // ✅ API URL for fetching listings
+  const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
   // Load user name and initial from localStorage on mount
   useEffect(() => {
@@ -24,23 +31,28 @@ export default function Dashboard() {
     }
   }, []);
 
+  // ✅ NEW: Fetch real listings from backend
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/listings`);
+        if (response.ok) {
+          const data = await response.json();
+          setRealListings(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch listings:", error);
+      } finally {
+        setLoadingListings(false);
+      }
+    };
+    fetchListings();
+  }, []);
+
   const stats = [
     { label: "Total Bookings", value: "8", icon: Calendar },
-    { label: "Active Listings", value: "3", icon: Home },
+    { label: "Active Listings", value: `${realListings.length}`, icon: Home }, // ✅ Dynamic count
     { label: "Saved Favorites", value: "12", icon: Heart },
-  ];
-
-  const myListings = [
-    {
-      id: "1",
-      title: "Cozy Mountain Cabin",
-      location: "Aspen, Colorado",
-      price: 189,
-      rating: 4.9,
-      reviewCount: 127,
-      images: [cabinImage, villaImage],
-      type: "Entire cabin",
-    },
   ];
 
   return (
@@ -54,7 +66,6 @@ export default function Dashboard() {
               <AvatarFallback className="text-xl">{userInitial}</AvatarFallback>
             </Avatar>
             <div>
-              {/* ✅ Dynamic user name from localStorage */}
               <h1 className="text-2xl font-bold">Welcome back, {userName}</h1>
               <p className="text-muted-foreground">Manage your bookings and listings</p>
             </div>
@@ -102,7 +113,6 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="listings" className="space-y-6">
-            {/* ✅ AddListingForm integrated here */}
             <AddListingForm />
             
             <div className="flex items-center justify-between">
@@ -111,10 +121,26 @@ export default function Dashboard() {
                 Manage All
               </Button>
             </div>
+            
+            {/* ✅ REPLACED hardcoded listings with real ones */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myListings.map((listing) => (
-                <ListingCard key={listing.id} {...listing} />
-              ))}
+              {loadingListings ? (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  Loading your listings...
+                </div>
+              ) : realListings.length > 0 ? (
+                realListings.map((listing: any) => (
+                  <ListingCard 
+                    key={listing._id || listing.id} 
+                    {...listing}
+                    images={listing.images && listing.images.length > 0 ? listing.images : [cabinImage]}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  No listings yet. Create one above!
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -150,7 +176,7 @@ export default function Dashboard() {
                 <label className="text-sm font-medium">Full Name</label>
                 <input
                   type="text"
-                  defaultValue={userName} // ✅ Also dynamic here
+                  defaultValue={userName}
                   className="w-full h-9 px-3 rounded-md border bg-background"
                   data-testid="input-name"
                 />
