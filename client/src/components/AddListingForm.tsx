@@ -63,7 +63,7 @@ const AddListingForm = () => {
         availableTo: new Date(formData.availableTo).toISOString(),
       };
 
-      const response = await axios.post("http://localhost:5012/api/listings", payload, {
+      const response = await axios.post("https://stayease-1-mijo.onrender.com/", payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
