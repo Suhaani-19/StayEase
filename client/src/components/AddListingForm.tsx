@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 
 interface FormData {
   title: string;
@@ -11,6 +10,8 @@ interface FormData {
   availableFrom: string;
   availableTo: string;
 }
+
+const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
 const AddListingForm = () => {
   const [formData, setFormData] = useState<FormData>({
@@ -28,7 +29,7 @@ const AddListingForm = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Get user ID and token from localStorage (set during login/signup)
+  // Get user ID and token from localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUserId = localStorage.getItem("userId");
@@ -36,8 +37,6 @@ const AddListingForm = () => {
     if (storedToken && storedUserId) {
       setToken(storedToken);
       setUserId(storedUserId);
-      // Set default axios Authorization header
-      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
     } else {
       setMessage("❌ Please login first");
     }
@@ -58,19 +57,30 @@ const AddListingForm = () => {
       const payload = {
         ...formData,
         price: Number(formData.price),
-        owner: userId, // Dynamic user ID from localStorage
+        owner: userId,
         availableFrom: new Date(formData.availableFrom).toISOString(),
         availableTo: new Date(formData.availableTo).toISOString(),
       };
 
-      const response = await axios.post("https://stayease-1-mijo.onrender.com/", payload, {
+      // ✅ Using Fetch API instead of axios
+      const response = await fetch(`${API_URL}/api/listings`, { // Fixed endpoint
+        method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        body: JSON.stringify(payload),
       });
 
-      setMessage(`✅ Listing created! ID: ${response.data._id}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || "Failed to create listing");
+      }
+
+      const data = await response.json();
+      setMessage(`✅ Listing created! ID: ${data._id || data.id}`);
+      
+      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -82,7 +92,7 @@ const AddListingForm = () => {
         availableTo: "",
       });
     } catch (error: any) {
-      setMessage(`❌ Error: ${error.response?.data?.error || error.message}`);
+      setMessage(`❌ Error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -125,7 +135,6 @@ const AddListingForm = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* All your existing form fields - unchanged */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
           <input
@@ -153,18 +162,37 @@ const AddListingForm = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+            <input 
+              type="text" 
+              name="location" 
+              value={formData.location} 
+              onChange={handleChange} 
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
+              required 
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-            <input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+            <input 
+              type="number" 
+              name="price" 
+              value={formData.price} 
+              onChange={handleChange} 
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
+              required 
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <select name="type" value={formData.type} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+            <select 
+              name="type" 
+              value={formData.type} 
+              onChange={handleChange} 
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            >
               <option value="apartment">Apartment</option>
               <option value="house">House</option>
               <option value="villa">Villa</option>
@@ -173,18 +201,38 @@ const AddListingForm = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-            <input type="url" value={formData.images[0]} onChange={handleImageChange} placeholder="https://example.com/image.jpg" className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <input 
+              type="url" 
+              value={formData.images[0]} 
+              onChange={handleImageChange} 
+              placeholder="https://example.com/image.jpg" 
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Available From</label>
-            <input type="date" name="availableFrom" value={formData.availableFrom} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+            <input 
+              type="date" 
+              name="availableFrom" 
+              value={formData.availableFrom} 
+              onChange={handleChange} 
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
+              required 
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Available To</label>
-            <input type="date" name="availableTo" value={formData.availableTo} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required />
+            <input 
+              type="date" 
+              name="availableTo" 
+              value={formData.availableTo} 
+              onChange={handleChange} 
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
+              required 
+            />
           </div>
         </div>
 
