@@ -1,131 +1,123 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Heart, Star, MapPin } from "lucide-react";
-import { useState } from "react";
 import { Link } from "wouter";
+import { MapPin, Star } from "lucide-react";
 
-interface ListingCardProps {
-  id: string;
+type ListingCardProps = {
+  id?: string;      // for hardcoded/demo listings
+  _id?: string;     // for MongoDB listings
   title: string;
   location: string;
   price: number;
-  rating: number;
-  reviewCount: number;
-  images: string[];
-  type: string;
-}
+  rating?: number;
+  reviewCount?: number;
+  images?: string[];
+  type?: string;
+  // Optional handlers for update/delete
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+};
 
-export default function ListingCard({
-  id,
-  title,
-  location,
-  price,
-  rating,
-  reviewCount,
-  images,
-  type,
-}: ListingCardProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+export default function ListingCard(props: ListingCardProps) {
+  const {
+    id,
+    _id,
+    title,
+    location,
+    price,
+    rating,
+    reviewCount,
+    images = [],
+    type,
+    onEdit,
+    onDelete,
+  } = props;
 
-  const nextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
+  // Use Mongo _id if present, else id
+  const listingId = _id || id;
 
-  const prevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  const imageSrc =
+    images && images.length > 0
+      ? images[0]
+      : "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg";
 
-  const toggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsFavorite(!isFavorite);
-    console.log("Favorite toggled:", !isFavorite);
-  };
+  const cardBody = (
+    <div className="rounded-xl overflow-hidden border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+      <div className="aspect-[4/3] w-full overflow-hidden bg-muted cursor-pointer">
+        <img src={imageSrc} alt={title} className="h-full w-full object-cover" />
+      </div>
 
-  return (
-    <Link href={`/listing/${id}`} data-testid={`link-listing-${id}`}>
-      <Card className="overflow-hidden hover-elevate active-elevate-2 transition-all cursor-pointer">
-        <div className="relative aspect-[4/3] overflow-hidden group">
-          <img
-            src={images[currentImageIndex]}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 bg-white/90 backdrop-blur hover:bg-white"
-            onClick={toggleFavorite}
-            data-testid={`button-favorite-${id}`}
-          >
-            <Heart
-              className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
-            />
-          </Button>
-
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                data-testid={`button-prev-${id}`}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                data-testid={`button-next-${id}`}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {images.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      index === currentImageIndex ? "bg-white" : "bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="font-serif font-semibold text-lg leading-tight line-clamp-1" data-testid={`text-title-${id}`}>
-              {title}
-            </h3>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Star className="h-4 w-4 fill-current" />
-              <span className="text-sm font-medium" data-testid={`text-rating-${id}`}>{rating}</span>
-              <span className="text-sm text-muted-foreground">({reviewCount})</span>
+      <div className="p-4 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 className="font-semibold text-base line-clamp-1">{title}</h3>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span className="line-clamp-1">{location}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-            <MapPin className="h-4 w-4" />
-            <span className="line-clamp-1" data-testid={`text-location-${id}`}>{location}</span>
-          </div>
-
-          <div className="text-sm text-muted-foreground mb-3">{type}</div>
-
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-semibold" data-testid={`text-price-${id}`}>${price}</span>
-            <span className="text-muted-foreground">/ night</span>
-          </div>
+          {(rating || reviewCount) && (
+            <div className="flex items-center gap-1 text-xs">
+              <Star className="h-3 w-3 fill-primary text-primary" />
+              <span className="font-medium">
+                {rating ? rating.toFixed(1) : "New"}
+              </span>
+              {reviewCount !== undefined && (
+                <span className="text-muted-foreground">({reviewCount})</span>
+              )}
+            </div>
+          )}
         </div>
-      </Card>
-    </Link>
+
+        {type && (
+          <p className="text-xs text-muted-foreground line-clamp-1">{type}</p>
+        )}
+
+        <div className="flex items-baseline gap-1">
+          <span className="font-semibold text-lg">${price}</span>
+          <span className="text-xs text-muted-foreground">/ night</span>
+        </div>
+
+        {/* Edit / Delete actions */}
+        {listingId && (onEdit || onDelete) && (
+          <div className="mt-3 flex items-center justify-end gap-2">
+            {onEdit && (
+              <button
+                type="button"
+                className="text-xs px-2 py-1 rounded border border-primary text-primary hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(listingId);
+                }}
+              >
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                className="text-xs px-2 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(listingId);
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
+
+  // Only wrap in Link when we have an id
+  if (listingId) {
+    return (
+      <Link href={`/listing/${listingId}`}>
+        <div>{cardBody}</div>
+      </Link>
+    );
+  }
+
+  return cardBody;
 }

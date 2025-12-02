@@ -4,23 +4,22 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Calendar, Heart, Settings, Plus } from "lucide-react";
+import { Home, Calendar, Heart, Plus } from "lucide-react";
 import { Link } from "wouter";
 import cabinImage from "@assets/generated_images/Mountain_cabin_listing_photo_0428adcd.png";
 import villaImage from "@assets/generated_images/Beachfront_villa_listing_photo_b95534bf.png";
 import ListingCard from "@/components/ListingCard";
 import AddListingForm from "../components/AddListingForm";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
+
 export default function Dashboard() {
   const [userName, setUserName] = useState("User");
   const [userInitial, setUserInitial] = useState("U");
-  
-  // ✅ NEW: Real listings state
-  const [realListings, setRealListings] = useState([]);
-  const [loadingListings, setLoadingListings] = useState(true);
 
-  // ✅ API URL for fetching listings
-  const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
+  const [realListings, setRealListings] = useState<any[]>([]);
+  const [loadingListings, setLoadingListings] = useState(true);
 
   // Load user name and initial from localStorage on mount
   useEffect(() => {
@@ -31,7 +30,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ✅ NEW: Fetch real listings from backend
+  // Fetch real listings from backend
   useEffect(() => {
     const fetchListings = async () => {
       try {
@@ -49,9 +48,36 @@ export default function Dashboard() {
     fetchListings();
   }, []);
 
+  const handleEditListing = (id: string) => {
+    // For now, just go to the listing detail page.
+    // Later you can change this to /listing/:id/edit.
+    window.location.href = `/listing/${id}`;
+  };
+
+  const handleDeleteListing = async (id: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this listing?");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/listings/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || data.error || "Failed to delete listing");
+      }
+
+      // Remove from UI
+      setRealListings((prev) => prev.filter((l) => (l._id || l.id) !== id));
+    } catch (err: any) {
+      alert(err.message || "Error deleting listing");
+    }
+  };
+
   const stats = [
     { label: "Total Bookings", value: "8", icon: Calendar },
-    { label: "Active Listings", value: `${realListings.length}`, icon: Home }, // ✅ Dynamic count
+    { label: "Active Listings", value: `${realListings.length}`, icon: Home },
     { label: "Saved Favorites", value: "12", icon: Heart },
   ];
 
@@ -67,7 +93,9 @@ export default function Dashboard() {
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold">Welcome back, {userName}</h1>
-              <p className="text-muted-foreground">Manage your bookings and listings</p>
+              <p className="text-muted-foreground">
+                Manage your bookings and listings
+              </p>
             </div>
           </div>
           <Button asChild data-testid="button-create-listing">
@@ -83,8 +111,15 @@ export default function Dashboard() {
             <Card key={index} className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold" data-testid={`text-${stat.label.toLowerCase().replace(/\s/g, "-")}`}>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {stat.label}
+                  </p>
+                  <p
+                    className="text-3xl font-bold"
+                    data-testid={`text-${stat.label
+                      .toLowerCase()
+                      .replace(/\s/g, "-")}`}
+                  >
                     {stat.value}
                   </p>
                 </div>
@@ -112,17 +147,17 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
+          {/* LISTINGS TAB */}
           <TabsContent value="listings" className="space-y-6">
             <AddListingForm />
-            
+
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Your Properties</h2>
               <Button variant="outline" data-testid="button-manage-listings">
                 Manage All
               </Button>
             </div>
-            
-            {/* ✅ REPLACED hardcoded listings with real ones */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loadingListings ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
@@ -130,10 +165,16 @@ export default function Dashboard() {
                 </div>
               ) : realListings.length > 0 ? (
                 realListings.map((listing: any) => (
-                  <ListingCard 
-                    key={listing._id || listing.id} 
+                  <ListingCard
+                    key={listing._id || listing.id}
                     {...listing}
-                    images={listing.images && listing.images.length > 0 ? listing.images : [cabinImage]}
+                    images={
+                      listing.images && listing.images.length > 0
+                        ? listing.images
+                        : [cabinImage, villaImage]
+                    }
+                    onEdit={handleEditListing}
+                    onDelete={handleDeleteListing}
                   />
                 ))
               ) : (
@@ -144,11 +185,15 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
+          {/* BOOKINGS TAB */}
           <TabsContent value="bookings" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Upcoming Bookings</h2>
               <Link href="/bookings">
-                <Button variant="outline" data-testid="button-view-all-bookings">
+                <Button
+                  variant="outline"
+                  data-testid="button-view-all-bookings"
+                >
                   View All
                 </Button>
               </Link>
@@ -159,6 +204,7 @@ export default function Dashboard() {
             </Card>
           </TabsContent>
 
+          {/* FAVORITES TAB */}
           <TabsContent value="favorites" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Saved Listings</h2>
@@ -169,6 +215,7 @@ export default function Dashboard() {
             </Card>
           </TabsContent>
 
+          {/* SETTINGS TAB */}
           <TabsContent value="settings" className="space-y-6">
             <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
             <Card className="p-6 space-y-4">
