@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
 // Make sure API_URL points to your backend, e.g. "https://stayease-backend.onrender.com"
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5013";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 interface AuthFormProps {
   mode: "login" | "register";
