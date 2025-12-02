@@ -56,8 +56,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
       if (!res.ok) throw new Error(data.message || "Request failed");
 
       // Store token and userId on successful auth
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.user.id);
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("userId", data.user.id);
+    localStorage.setItem("userName", data.user.name);
+
 
       alert(mode === "register" ? "Signup successful!" : "Login successful!");
       setLocation(mode === "register" ? "/login" : "/");

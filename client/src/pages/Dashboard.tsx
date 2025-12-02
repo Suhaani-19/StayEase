@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,18 @@ import ListingCard from "@/components/ListingCard";
 import AddListingForm from "../components/AddListingForm";
 
 export default function Dashboard() {
+  const [userName, setUserName] = useState("User");
+  const [userInitial, setUserInitial] = useState("U");
+
+  // Load user name and initial from localStorage on mount
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName");
+    if (storedName) {
+      setUserName(storedName);
+      setUserInitial(storedName.charAt(0).toUpperCase());
+    }
+  }, []);
+
   const stats = [
     { label: "Total Bookings", value: "8", icon: Calendar },
     { label: "Active Listings", value: "3", icon: Home },
@@ -38,10 +51,11 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-xl">JD</AvatarFallback>
+              <AvatarFallback className="text-xl">{userInitial}</AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-2xl font-bold">Welcome back, John</h1>
+              {/* ✅ Dynamic user name from localStorage */}
+              <h1 className="text-2xl font-bold">Welcome back, {userName}</h1>
               <p className="text-muted-foreground">Manage your bookings and listings</p>
             </div>
           </div>
@@ -136,7 +150,7 @@ export default function Dashboard() {
                 <label className="text-sm font-medium">Full Name</label>
                 <input
                   type="text"
-                  defaultValue="John Doe"
+                  defaultValue={userName} // ✅ Also dynamic here
                   className="w-full h-9 px-3 rounded-md border bg-background"
                   data-testid="input-name"
                 />
