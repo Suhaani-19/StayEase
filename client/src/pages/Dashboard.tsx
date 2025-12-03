@@ -48,10 +48,9 @@ export default function Dashboard() {
     fetchListings();
   }, []);
 
+  // 👇 UPDATED: Now goes to EDIT FORM instead of detail page
   const handleEditListing = (id: string) => {
-    // For now, just go to the listing detail page.
-    // Later you can change this to /listing/:id/edit.
-    window.location.href = `/listing/${id}`;
+    window.location.href = `/edit-listing/${id}`;
   };
 
   const handleDeleteListing = async (id: string) => {

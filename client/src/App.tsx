@@ -11,6 +11,8 @@ import Bookings from "@/pages/Bookings";
 import ListingDetail from "@/pages/ListingDetail";
 import SearchResults from "@/pages/SearchResults";
 import NotFound from "@/pages/not-found";
+import ListingEdit from "@/pages/ListingEdit";
+
 
 function Router() {
   return (
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/bookings" component={Bookings} />
       <Route path="/listing/:id" component={ListingDetail} />
+      <Route path="/edit-listing/:id" component={ListingEdit} />
+
       <Route path="/search" component={SearchResults} />
       <Route component={NotFound} />
     </Switch>
