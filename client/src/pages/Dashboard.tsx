@@ -48,10 +48,9 @@ export default function Dashboard() {
     fetchListings();
   }, []);
 
-  // 👇 UPDATED: Now goes to EDIT FORM instead of detail page
   const handleEditListing = (id: string) => {
-  window.location.href = `/edit-listing/${id}`;  // 👈 MUST BE THIS
-};
+    window.location.href = `/edit-listing/${id}`;
+  };
 
   const handleDeleteListing = async (id: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this listing?");
@@ -163,19 +162,22 @@ export default function Dashboard() {
                   Loading your listings...
                 </div>
               ) : realListings.length > 0 ? (
-                realListings.map((listing: any) => (
-                  <ListingCard
-                    key={listing._id || listing.id}
-                    {...listing}
-                    images={
-                      listing.images && listing.images.length > 0
-                        ? listing.images
-                        : [cabinImage, villaImage]
-                    }
-                    onEdit={handleEditListing}
-                    onDelete={handleDeleteListing}
-                  />
-                ))
+                realListings.map((listing: any) => {
+                  const isOwner = listing.owner === localStorage.getItem("userId");
+                  return (
+                    <ListingCard
+                      key={listing._id || listing.id}
+                      {...listing}
+                      images={
+                        listing.images && listing.images.length > 0
+                          ? listing.images
+                          : [cabinImage, villaImage]
+                      }
+                      onEdit={isOwner ? handleEditListing : undefined}
+                      onDelete={isOwner ? handleDeleteListing : undefined}
+                    />
+                  );
+                })
               ) : (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   No listings yet. Create one above!
