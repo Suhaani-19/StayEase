@@ -12,25 +12,12 @@ export default defineConfig({
     },
   },
   root: __dirname,
-  server: {
-    historyApiFallback: true,  // 👈 FIX #1: Dev server SPA support
-  },
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        // 👈 FIX #2: Render.com SPA deployment
-        manualChunks: undefined,
-      },
-    },
   },
   optimizeDeps: {
     include: ["axios"],
   },
-  preview: {
-    // 👈 FIX #3: Preview server SPA support
-    port: 4173,
-    open: true,
-  },
+  // 👈 NO historyApiFallback - Vite doesn't have it
 });
