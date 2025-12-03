@@ -135,7 +135,7 @@ const ListingEdit = () => {
     setFormData({ ...formData, images: [e.target.value] });
   };
 
-  if (initialLoad || !userId) {
+  if (!userId) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
