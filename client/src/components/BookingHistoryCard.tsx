@@ -1,3 +1,4 @@
+// client/src/components/BookingHistoryCard.tsx
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ interface BookingHistoryCardProps {
   checkOut: string;
   guests: number;
   totalPrice: number;
-  status: "upcoming" | "completed" | "cancelled";
+  status: "upcoming" | "completed" | "cancelled"; // ✅ Frontend status
 }
 
 export default function BookingHistoryCard({

@@ -1,18 +1,32 @@
+// client/src/components/BookingCard.tsx
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, DollarSign } from "lucide-react";
+import { Calendar, Users } from "lucide-react"; // ✅ ADDED Users
 import { useState } from "react";
+import { Label } from "@/components/ui/label";
+
+const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
 interface BookingCardProps {
+  listingId: string;
   pricePerNight: number;
   rating: number;
   reviewCount: number;
+  image?: string;
+  title?: string;
 }
-
-export default function BookingCard({ pricePerNight, rating, reviewCount }: BookingCardProps) {
+export default function BookingCard({ 
+  listingId, 
+  pricePerNight, 
+  rating, 
+  reviewCount, 
+  image, 
+  title 
+}: BookingCardProps) {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState("1");
+  const [loading, setLoading] = useState(false);
 
   const calculateNights = () => {
     if (!checkIn || !checkOut) return 0;
@@ -28,12 +42,65 @@ export default function BookingCard({ pricePerNight, rating, reviewCount }: Book
   const serviceFee = subtotal * 0.1;
   const total = subtotal + serviceFee;
 
-  const handleReserve = () => {
-    console.log("Reservation:", { checkIn, checkOut, guests, total });
+  const handleReserve = async () => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    
+    if (!token || !userId) {
+      alert("Please login first");
+      return;
+    }
+
+    if (!checkIn || !checkOut || nights === 0) {
+      alert("Please select valid check-in and check-out dates");
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const bookingData = {
+        listingId,
+        guestId: userId,
+        dates: {
+          from: new Date(checkIn).toISOString(),
+          to: new Date(checkOut).toISOString()
+        },
+        totalPrice: total,
+        guests: Number(guests),
+        status: "pending"
+      };
+
+      const res = await fetch(`${API_URL}/api/bookings`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (res.ok) {
+        alert("✅ Booking created successfully!");
+        // Reset form
+        setCheckIn("");
+        setCheckOut("");
+        setGuests("1");
+      } else {
+        const error = await res.json();
+        alert(`❌ Booking failed: ${error.message || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      console.error("Booking error:", err);
+      alert(`❌ Booking error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Card className="p-6 sticky top-24">
+      {/* Price & Rating */}
       <div className="flex items-baseline justify-between mb-6">
         <div>
           <span className="text-2xl font-semibold" data-testid="text-price">${pricePerNight}</span>
@@ -45,6 +112,7 @@ export default function BookingCard({ pricePerNight, rating, reviewCount }: Book
         </div>
       </div>
 
+      {/* Dates & Guests */}
       <div className="space-y-4 mb-6">
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -95,17 +163,25 @@ export default function BookingCard({ pricePerNight, rating, reviewCount }: Book
         </div>
       </div>
 
-      <Button onClick={handleReserve} className="w-full mb-4" size="lg" data-testid="button-reserve">
-        Reserve
+      {/* Reserve Button */}
+      <Button 
+        onClick={handleReserve} 
+        className="w-full mb-4" 
+        size="lg" 
+        disabled={loading}
+        data-testid="button-reserve"
+      >
+        {loading ? "Creating Booking..." : "Reserve"}
       </Button>
 
+      {/* Price Breakdown */}
       {nights > 0 && (
         <div className="space-y-2 pt-4 border-t">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
               ${pricePerNight} × {nights} nights
             </span>
-            <span data-testid="text-subtotal">${subtotal}</span>
+            <span data-testid="text-subtotal">${subtotal.toFixed(0)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Service fee</span>
@@ -119,8 +195,4 @@ export default function BookingCard({ pricePerNight, rating, reviewCount }: Book
       )}
     </Card>
   );
-}
-
-function Label({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <label className={className}>{children}</label>;
 }

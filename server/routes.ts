@@ -7,7 +7,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { User, Stay } from "./storage.js"; // ✅ ESM import
 import listingsRouter from "./listingsRoutes.js"; // ✅ NEW: listings CRUD routes
-
+import bookingsRoutes from './bookingsRoutes.js';
 export async function registerRoutes(app: Express): Promise<Server> {
   // ------------------------------
   // AUTH ROUTES
@@ -141,8 +141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LISTINGS ROUTES (NEW)
   // ------------------------------
 
-  app.use("/api/listings", listingsRouter);
-
+  app.use("/", listingsRouter);
+  app.use('/', bookingsRoutes);
   // ------------------------------
   // Create HTTP server for Vite HMR
   // ------------------------------

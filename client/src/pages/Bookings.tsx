@@ -1,63 +1,83 @@
+// client/src/pages/Bookings.tsx
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import BookingHistoryCard from "@/components/BookingHistoryCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import cabinImage from "@assets/generated_images/Mountain_cabin_listing_photo_0428adcd.png";
-import villaImage from "@assets/generated_images/Beachfront_villa_listing_photo_b95534bf.png";
-import loftImage from "@assets/generated_images/Urban_loft_listing_photo_1fd875a3.png";
+
+const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
+
+// 🔥 TYPE DEFINITIONS
+interface Booking {
+  _id: string;
+  listingId: {
+    title: string;
+    location: string;
+    images?: string[];
+  };
+  guestId?: {
+    name: string;
+    email?: string;
+  };
+  dates: {
+    from: string;
+    to: string;
+  };
+  totalPrice: number;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  guests?: number;
+}
 
 export default function Bookings() {
-  const upcomingBookings = [
-    {
-      id: "1",
-      propertyName: "Cozy Mountain Cabin",
-      location: "Aspen, Colorado",
-      image: cabinImage,
-      checkIn: "Dec 15, 2024",
-      checkOut: "Dec 20, 2024",
-      guests: 4,
-      totalPrice: 945,
-      status: "upcoming" as const,
-    },
-  ];
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState<'upcoming' | 'completed' | 'cancelled'>("upcoming");
 
-  const completedBookings = [
-    {
-      id: "2",
-      propertyName: "Luxury Beachfront Villa",
-      location: "Malibu, California",
-      image: villaImage,
-      checkIn: "Nov 1, 2024",
-      checkOut: "Nov 5, 2024",
-      guests: 2,
-      totalPrice: 1800,
-      status: "completed" as const,
-    },
-    {
-      id: "3",
-      propertyName: "Urban Loft with City Views",
-      location: "New York, NY",
-      image: loftImage,
-      checkIn: "Oct 10, 2024",
-      checkOut: "Oct 15, 2024",
-      guests: 3,
-      totalPrice: 1375,
-      status: "completed" as const,
-    },
-  ];
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
-  const cancelledBookings = [
-    {
-      id: "4",
-      propertyName: "Charming Countryside Cottage",
-      location: "Cotswolds, England",
-      image: cabinImage,
-      checkIn: "Sep 5, 2024",
-      checkOut: "Sep 10, 2024",
-      guests: 2,
-      totalPrice: 825,
-      status: "cancelled" as const,
-    },
-  ];
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
+
+      const res = await fetch(`${API_URL}/api/bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (!res.ok) throw new Error("Failed to fetch bookings");
+      
+      const data: Booking[] = await res.json();
+      setBookings(data);
+    } catch (err) {
+      console.error("Failed to fetch bookings", err);
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔥 TYPE-SAFE FILTERING
+  const getBookingsByStatus = (status: 'pending' | 'confirmed' | 'cancelled') =>
+    bookings.filter((booking) => booking.status === status);
+
+  // 🔥 STATUS MAPPER - FIXED POSITION
+  const getCardStatus = (backendStatus: 'pending' | 'confirmed' | 'cancelled'): "upcoming" | "completed" | "cancelled" => {
+    switch (backendStatus) {
+      case 'pending': return 'upcoming';
+      case 'confirmed': return 'completed';
+      case 'cancelled': return 'cancelled';
+      default: return 'upcoming';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div>Loading bookings...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,35 +86,86 @@ export default function Bookings() {
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         <h1 className="text-3xl font-bold mb-8">My Bookings</h1>
 
-        <Tabs defaultValue="upcoming" className="space-y-6">
+        <Tabs
+          value={selectedTab}
+          onValueChange={(value: string) => {
+            setSelectedTab(value as "upcoming" | "completed" | "cancelled");
+          }}
+          className="space-y-6"
+        >
           <TabsList data-testid="tabs-bookings">
-            <TabsTrigger value="upcoming" data-testid="tab-upcoming">
-              Upcoming ({upcomingBookings.length})
+            <TabsTrigger value="upcoming">
+              Upcoming ({getBookingsByStatus("pending").length})
             </TabsTrigger>
-            <TabsTrigger value="completed" data-testid="tab-completed">
-              Completed ({completedBookings.length})
+            <TabsTrigger value="completed">
+              Completed ({getBookingsByStatus("confirmed").length})
             </TabsTrigger>
-            <TabsTrigger value="cancelled" data-testid="tab-cancelled">
-              Cancelled ({cancelledBookings.length})
+            <TabsTrigger value="cancelled">
+              Cancelled ({getBookingsByStatus("cancelled").length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-4">
-            {upcomingBookings.map((booking) => (
-              <BookingHistoryCard key={booking.id} {...booking} />
-            ))}
+            {getBookingsByStatus("pending").length === 0 ? (
+              <p className="text-muted-foreground">No upcoming bookings</p>
+            ) : (
+              getBookingsByStatus("pending").map((booking) => (
+                <BookingHistoryCard
+                  key={booking._id}
+                  id={booking._id}
+                  propertyName={booking.listingId.title}
+                  location={booking.listingId.location}
+                  image={booking.listingId.images?.[0] || ""}
+                  checkIn={new Date(booking.dates.from).toLocaleDateString()}
+                  checkOut={new Date(booking.dates.to).toLocaleDateString()}
+                  guests={booking.guests || 2}
+                  totalPrice={booking.totalPrice}
+                  status={getCardStatus(booking.status)} // ✅ FIXED: Use mapper
+                />
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="completed" className="space-y-4">
-            {completedBookings.map((booking) => (
-              <BookingHistoryCard key={booking.id} {...booking} />
-            ))}
+            {getBookingsByStatus("confirmed").length === 0 ? (
+              <p className="text-muted-foreground">No completed bookings</p>
+            ) : (
+              getBookingsByStatus("confirmed").map((booking) => (
+                <BookingHistoryCard
+                  key={booking._id}
+                  id={booking._id}
+                  propertyName={booking.listingId.title}
+                  location={booking.listingId.location}
+                  image={booking.listingId.images?.[0] || ""}
+                  checkIn={new Date(booking.dates.from).toLocaleDateString()}
+                  checkOut={new Date(booking.dates.to).toLocaleDateString()}
+                  guests={booking.guests || 2}
+                  totalPrice={booking.totalPrice}
+                  status={getCardStatus(booking.status)} // ✅ FIXED: Use mapper
+                />
+              ))
+            )}
           </TabsContent>
 
           <TabsContent value="cancelled" className="space-y-4">
-            {cancelledBookings.map((booking) => (
-              <BookingHistoryCard key={booking.id} {...booking} />
-            ))}
+            {getBookingsByStatus("cancelled").length === 0 ? (
+              <p className="text-muted-foreground">No cancelled bookings</p>
+            ) : (
+              getBookingsByStatus("cancelled").map((booking) => (
+                <BookingHistoryCard
+                  key={booking._id}
+                  id={booking._id}
+                  propertyName={booking.listingId.title}
+                  location={booking.listingId.location}
+                  image={booking.listingId.images?.[0] || ""}
+                  checkIn={new Date(booking.dates.from).toLocaleDateString()}
+                  checkOut={new Date(booking.dates.to).toLocaleDateString()}
+                  guests={booking.guests || 2}
+                  totalPrice={booking.totalPrice}
+                  status={getCardStatus(booking.status)} // ✅ FIXED: Use mapper
+                />
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </main>

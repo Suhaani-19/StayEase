@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BookingCard from "@/components/BookingCard";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, Star, Wifi, Car, Waves, Wind, Users, Home } from "lucide-react";
 import { useRoute } from "wouter";
-
+import { MapPin, Star, Wifi, Car, Waves, Wind, Users, Home } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const API_URL =
   import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
@@ -310,9 +309,12 @@ export default function ListingDetail() {
 
           <div className="lg:col-span-1">
             <BookingCard
-              pricePerNight={price}
-              rating={rating}
-              reviewCount={reviewCount}
+              listingId={listing._id || ""} // ✅ FIXED
+              pricePerNight={listing.price}
+              rating={listing.rating || 4.5}
+              reviewCount={listing.reviewCount || 0}
+              image={listing.images?.[0] || ""}
+              title={listing.title}
             />
           </div>
         </div>
