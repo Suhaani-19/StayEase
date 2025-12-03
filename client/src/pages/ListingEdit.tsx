@@ -36,19 +36,22 @@ const ListingEdit = () => {
   const [token, setToken] = useState<string | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  // Get user auth
+  // Load auth first
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUserId = localStorage.getItem("userId");
     if (storedToken && storedUserId) {
       setToken(storedToken);
       setUserId(storedUserId);
+    } else {
+      setMessage("❌ Please login first");
+      setInitialLoad(false);
     }
   }, []);
 
-  // Load existing listing if editing
+  // Fetch listing AFTER auth + id ready
   useEffect(() => {
-    if (!id || !userId) return;
+    if (!id || !userId || !token || initialLoad) return;
 
     const fetchListing = async () => {
       try {
@@ -57,24 +60,25 @@ const ListingEdit = () => {
         const listing = await res.json();
         
         setFormData({
-          title: listing.title,
-          description: listing.description,
-          location: listing.location,
-          price: listing.price.toString(),
-          type: listing.type,
+          title: listing.title || "",
+          description: listing.description || "",
+          location: listing.location || "",
+          price: listing.price?.toString() || "",
+          type: listing.type || "apartment",
           images: listing.images || [""],
-          availableFrom: new Date(listing.availableFrom).toISOString().split('T')[0],
-          availableTo: new Date(listing.availableTo).toISOString().split('T')[0],
+          availableFrom: listing.availableFrom ? new Date(listing.availableFrom).toISOString().split('T')[0] : "",
+          availableTo: listing.availableTo ? new Date(listing.availableTo).toISOString().split('T')[0] : "",
         });
-      } catch (err) {
-        setMessage("❌ Failed to load listing");
+        setMessage("✅ Ready to edit!");
+      } catch (err: any) {
+        setMessage(`❌ Failed to load listing: ${err.message}`);
       } finally {
         setInitialLoad(false);
       }
     };
 
     fetchListing();
-  }, [id, userId]);
+  }, [id, userId, token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +105,7 @@ const ListingEdit = () => {
       };
 
       const response = await fetch(`${API_URL}/api/listings/${id}`, {
-        method: "PUT", // 👈 UPDATE instead of POST
+        method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -131,13 +135,20 @@ const ListingEdit = () => {
     setFormData({ ...formData, images: [e.target.value] });
   };
 
-  if (!userId || (id && initialLoad)) {
+  if (initialLoad || !userId) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-2xl mx-auto p-6">
           <h2 className="text-2xl font-bold mb-6">Edit Listing</h2>
-          {initialLoad && <p>Loading listing...</p>}
+          <p className="text-muted-foreground">Loading...</p>
+          {message && (
+            <div className={`p-4 mt-4 rounded-lg ${
+              message.includes("✅") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            }`}>
+              {message}
+            </div>
+          )}
         </main>
       </div>
     );
