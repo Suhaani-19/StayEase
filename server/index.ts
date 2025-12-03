@@ -1,11 +1,12 @@
 // server/index.ts
 import cors from "cors";
-import "dotenv/config"; // must be first
+import "dotenv/config";
 import express, { type Request, type Response, type NextFunction } from "express";
+import path from "path";
 import dotenv from "dotenv";
 
 import { registerRoutes } from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
+import { setupVite, log } from "./vite.js";
 import { connectDB } from "./db.js";
 
 dotenv.config();
@@ -79,11 +80,18 @@ app.use((req, res, next) => {
 
   // 3) Frontend handling
   // In development → use Vite middleware (same HTML as :5173)
-  // In production  → serve built client from /client/dist
+  // In production → serve built client from /client/dist ✅ FIXED
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    // ✅ PRODUCTION: Serve React app from client/dist
+    const clientDistPath = path.resolve(process.cwd(), 'client/dist');
+    app.use(express.static(clientDistPath));
+    
+    // ✅ React Router SPA catch-all route
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(clientDistPath, 'index.html'));
+    });
   }
 
   // 4) Start server
