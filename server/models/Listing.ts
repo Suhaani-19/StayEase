@@ -6,10 +6,16 @@ export interface IListing extends Document {
   location: string;
   price: number;
   type: "apartment" | "house" | "villa" | "hotel";
-  owner: mongoose.Types.ObjectId;     // reference to User
+  owner: mongoose.Types.ObjectId; // reference to User
   images: string[];
   availableFrom: Date;
   availableTo: Date;
+
+  // NEW: denormalized host fields for fast rendering
+  ownerName?: string;
+  ownerJoinedDate?: string;
+  ownerResponseRate?: string;
+  ownerResponseTime?: string;
 }
 
 const listingSchema = new Schema<IListing>(
@@ -18,11 +24,21 @@ const listingSchema = new Schema<IListing>(
     description: { type: String, required: true },
     location: { type: String, required: true },
     price: { type: Number, required: true },
-    type: { type: String, enum: ["apartment", "house", "villa", "hotel"], required: true },
+    type: {
+      type: String,
+      enum: ["apartment", "house", "villa", "hotel"],
+      required: true,
+    },
     owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
     images: [{ type: String }],
     availableFrom: { type: Date, required: true },
     availableTo: { type: Date, required: true },
+
+    // NEW: optional denormalized host fields
+    ownerName: { type: String },
+    ownerJoinedDate: { type: String },
+    ownerResponseRate: { type: String },
+    ownerResponseTime: { type: String },
   },
   { timestamps: true }
 );

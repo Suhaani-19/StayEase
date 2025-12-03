@@ -33,7 +33,7 @@ const AddListingForm = () => {
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUserId = localStorage.getItem("userId");
-    
+
     if (storedToken && storedUserId) {
       setToken(storedToken);
       setUserId(storedUserId);
@@ -44,7 +44,7 @@ const AddListingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!userId || !token) {
       setMessage("❌ Please login first");
       return;
@@ -54,19 +54,26 @@ const AddListingForm = () => {
     setMessage("");
 
     try {
+      const userName = localStorage.getItem("userName") || "Host";
+
       const payload = {
         ...formData,
         price: Number(formData.price),
         owner: userId,
         availableFrom: new Date(formData.availableFrom).toISOString(),
         availableTo: new Date(formData.availableTo).toISOString(),
+
+        // NEW: denormalized host fields used by ListingDetail
+        ownerName: userName,
+        ownerJoinedDate: "Joined in 2024",       // tweak if you have real data
+        ownerResponseRate: "100%",
+        ownerResponseTime: "Within an hour",
       };
 
-      // ✅ Using Fetch API instead of axios
-      const response = await fetch(`${API_URL}/api/listings`, { // Fixed endpoint
+      const response = await fetch(`${API_URL}/api/listings`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -74,12 +81,14 @@ const AddListingForm = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || errorData.error || "Failed to create listing");
+        throw new Error(
+          errorData.message || errorData.error || "Failed to create listing"
+        );
       }
 
       const data = await response.json();
       setMessage(`✅ Listing created! ID: ${data._id || data.id}`);
-      
+
       // Reset form
       setFormData({
         title: "",
@@ -99,7 +108,9 @@ const AddListingForm = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -112,9 +123,15 @@ const AddListingForm = () => {
   if (!userId) {
     return (
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Listing</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">
+          Add New Listing
+        </h2>
         <div className="p-4 mb-4 rounded-lg bg-orange-100 text-orange-800">
-          Please <a href="/login" className="font-semibold underline">login</a> to create listings.
+          Please{" "}
+          <a href="/login" className="font-semibold underline">
+            login
+          </a>{" "}
+          to create listings.
         </div>
       </div>
     );
@@ -123,11 +140,13 @@ const AddListingForm = () => {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Listing</h2>
-      
+
       {message && (
         <div
           className={`p-4 mb-4 rounded-lg ${
-            message.includes("✅") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            message.includes("✅")
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
           }`}
         >
           {message}
@@ -136,7 +155,9 @@ const AddListingForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title
+          </label>
           <input
             type="text"
             name="title"
@@ -148,7 +169,9 @@ const AddListingForm = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
           <textarea
             name="description"
             value={formData.description}
@@ -161,36 +184,42 @@ const AddListingForm = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <input 
-              type="text" 
-              name="location" 
-              value={formData.location} 
-              onChange={handleChange} 
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
-              required 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Location
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-            <input 
-              type="number" 
-              name="price" 
-              value={formData.price} 
-              onChange={handleChange} 
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
-              required 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Price (₹)
+            </label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <select 
-              name="type" 
-              value={formData.type} 
-              onChange={handleChange} 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type
+            </label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             >
               <option value="apartment">Apartment</option>
@@ -200,38 +229,44 @@ const AddListingForm = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-            <input 
-              type="url" 
-              value={formData.images[0]} 
-              onChange={handleImageChange} 
-              placeholder="https://example.com/image.jpg" 
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Image URL
+            </label>
+            <input
+              type="url"
+              value={formData.images[0]}
+              onChange={handleImageChange}
+              placeholder="https://example.com/image.jpg"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Available From</label>
-            <input 
-              type="date" 
-              name="availableFrom" 
-              value={formData.availableFrom} 
-              onChange={handleChange} 
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
-              required 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Available From
+            </label>
+            <input
+              type="date"
+              name="availableFrom"
+              value={formData.availableFrom}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Available To</label>
-            <input 
-              type="date" 
-              name="availableTo" 
-              value={formData.availableTo} 
-              onChange={handleChange} 
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" 
-              required 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Available To
+            </label>
+            <input
+              type="date"
+              name="availableTo"
+              value={formData.availableTo}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
         </div>

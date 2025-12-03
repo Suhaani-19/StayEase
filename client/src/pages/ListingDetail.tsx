@@ -24,6 +24,15 @@ type Listing = {
   baths?: number;
   images?: string[];
   description?: string;
+
+  // 👇 adjust these to whatever your backend returns
+  ownerName?: string;
+  owner?: {
+    name?: string;
+    joinedDate?: string;
+    responseRate?: string;
+    responseTime?: string;
+  };
 };
 
 export default function ListingDetail() {
@@ -105,6 +114,8 @@ export default function ListingDetail() {
     baths = 1,
     images = [],
     description = "",
+    owner,
+    ownerName,
   } = listing;
 
   const displayImages =
@@ -116,12 +127,12 @@ export default function ListingDetail() {
           "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
         ];
 
-  const host = {
-    name: "Sarah Johnson",
-    joinedDate: "Joined in 2019",
-    responseRate: "100%",
-    responseTime: "Within an hour",
-  };
+  // 👇 derive host info dynamically from listing
+  const hostName =
+    owner?.name || ownerName || localStorage.getItem("userName") || "Host";
+  const hostJoinedDate = owner?.joinedDate || "Joined recently";
+  const hostResponseRate = owner?.responseRate || "100%";
+  const hostResponseTime = owner?.responseTime || "Within an hour";
 
   const amenities = [
     { icon: Wifi, label: "WiFi" },
@@ -195,7 +206,7 @@ export default function ListingDetail() {
           <div className="lg:col-span-2 space-y-8">
             <div>
               <h2 className="text-2xl font-semibold mb-4">
-                {type} hosted by {host.name}
+                {type} hosted by {hostName}
               </h2>
               <div className="flex gap-4 text-muted-foreground mb-6">
                 <span>{guests} guests</span>
@@ -229,22 +240,27 @@ export default function ListingDetail() {
               <h3 className="text-xl font-semibold mb-6">Meet your host</h3>
               <div className="flex items-start gap-6 p-6 bg-muted/30 rounded-xl">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback>SJ</AvatarFallback>
+                  <AvatarFallback>
+                    {hostName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="font-semibold text-lg mb-1">{host.name}</h4>
+                  <h4 className="font-semibold text-lg mb-1">{hostName}</h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {host.joinedDate}
+                    {hostJoinedDate}
                   </p>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="font-medium">
-                        Response rate: {host.responseRate}
+                        Response rate: {hostResponseRate}
                       </div>
                     </div>
                     <div>
                       <div className="font-medium">
-                        Response time: {host.responseTime}
+                        Response time: {hostResponseTime}
                       </div>
                     </div>
                   </div>
@@ -252,7 +268,6 @@ export default function ListingDetail() {
               </div>
             </div>
 
-            {/* Reviews section stays mostly the same */}
             <div className="border-t pt-8">
               <div className="flex items-center gap-2 mb-6">
                 <Star className="h-5 w-5 fill-current" />
