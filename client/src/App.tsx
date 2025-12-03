@@ -1,3 +1,4 @@
+// client/src/App.tsx
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,11 +9,12 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import Bookings from "@/pages/Bookings";
+import BookingDetail from "@/pages/BookingDetail";     // ✅ NEW
+import BookingEdit from "@/pages/BookingEdit";         // ✅ NEW
 import ListingDetail from "@/pages/ListingDetail";
 import SearchResults from "@/pages/SearchResults";
 import NotFound from "@/pages/not-found";
 import ListingEdit from "@/pages/ListingEdit";
-
 
 function Router() {
   return (
@@ -21,11 +23,16 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
+      
+      {/* ✅ COMPLETE BOOKINGS ROUTES */}
       <Route path="/bookings" component={Bookings} />
+      <Route path="/booking/:id" component={BookingDetail} />
+      <Route path="/booking-edit/:id" component={BookingEdit} />
+      
       <Route path="/listing/:id" component={ListingDetail} />
       <Route path="/edit-listing/:id" component={ListingEdit} />
-
       <Route path="/search" component={SearchResults} />
+      
       <Route component={NotFound} />
     </Switch>
   );
