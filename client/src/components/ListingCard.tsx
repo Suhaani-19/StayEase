@@ -41,7 +41,7 @@ export default function ListingCard(props: ListingCardProps) {
 
   const cardBody = (
     <div className="rounded-xl overflow-hidden border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-      <div className="aspect-[4/3] w-full overflow-hidden bg-muted cursor-pointer">
+      <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
         <img src={imageSrc} alt={title} className="h-full w-full object-cover" />
       </div>
 
@@ -86,7 +86,8 @@ export default function ListingCard(props: ListingCardProps) {
                 className="text-xs px-2 py-1 rounded border border-primary text-primary hover:bg-primary/10"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEdit(listingId);
+                  e.preventDefault();
+                  onEdit(listingId!);  // ✅ CALLS YOUR DASHBOARD FUNCTION
                 }}
               >
                 Edit
@@ -98,7 +99,8 @@ export default function ListingCard(props: ListingCardProps) {
                 className="text-xs px-2 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(listingId);
+                  e.preventDefault();
+                  onDelete(listingId!);
                 }}
               >
                 Delete
@@ -110,8 +112,10 @@ export default function ListingCard(props: ListingCardProps) {
     </div>
   );
 
-  // Only wrap in Link when we have an id
-  if (listingId) {
+  // 🔥 FIXED: NO Link wrapper when onEdit/onDelete exist
+  const shouldLink = listingId && !onEdit && !onDelete;
+
+  if (shouldLink) {
     return (
       <Link href={`/listing/${listingId}`}>
         <div>{cardBody}</div>
