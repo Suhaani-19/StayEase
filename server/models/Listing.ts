@@ -1,3 +1,4 @@
+//server/models/Listing.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IListing extends Document {
