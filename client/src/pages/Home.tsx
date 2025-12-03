@@ -81,7 +81,9 @@ export default function Home() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold mb-2">Popular destinations</h2>
-            <p className="text-muted-foreground">Discover our most loved accommodations</p>
+            <p className="text-muted-foreground">
+              Discover our most loved accommodations
+            </p>
           </div>
           <Button variant="outline" data-testid="button-view-all">
             View All
@@ -90,7 +92,11 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {listings.map((listing) => (
-            <ListingCard key={listing.id} {...listing} />
+            <ListingCard
+              key={listing.id}
+              {...listing}
+              isDemo
+            />
           ))}
         </div>
       </main>
