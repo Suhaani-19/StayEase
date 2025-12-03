@@ -141,8 +141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LISTINGS ROUTES (NEW)
   // ------------------------------
 
-  app.use("/", listingsRouter);
-  app.use('/', bookingsRoutes);
+  app.use("/api/listings", listingsRouter);
+  app.use('/api/bookings', bookingsRoutes);
   // ------------------------------
   // Create HTTP server for Vite HMR
   // ------------------------------
