@@ -50,8 +50,8 @@ export default function Dashboard() {
 
   // 👇 UPDATED: Now goes to EDIT FORM instead of detail page
   const handleEditListing = (id: string) => {
-    window.location.href = `/edit-listing/${id}`;
-  };
+  window.location.href = `/edit-listing/${id}`;  // 👈 MUST BE THIS
+};
 
   const handleDeleteListing = async (id: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this listing?");
