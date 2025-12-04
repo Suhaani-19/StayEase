@@ -23,7 +23,10 @@ const authMiddleware = (req: Request, res: any, next: any) => {
 };
 
 // Protect listings PUT/DELETE
-listingsRouter.use(authMiddleware);
+listingsRouter.put("/:id", authMiddleware);
+listingsRouter.delete("/:id", authMiddleware);
+listingsRouter.post("/", authMiddleware);
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // AUTH ROUTES (unchanged)

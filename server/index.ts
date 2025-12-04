@@ -12,6 +12,13 @@ dotenv.config();
 
 const app = express();
 
+// ✅ Allow only trusted origins (NO wildcard with credentials)
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "https://stayease-1-mijo.onrender.com",
+].filter(Boolean);
+
 // Extend IncomingMessage to store raw body
 declare module "http" {
   interface IncomingMessage {
@@ -19,15 +26,26 @@ declare module "http" {
   }
 }
 
-// CORS middleware
+// ✅ CORS MIDDLEWARE (FIXED & SAFE)
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-// Body parser with raw body capture
+// ✅ Explicit preflight handler (THIS fixes your PUT 404)
+app.options("*", cors());
+
+// ✅ Body parser with raw body capture
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -37,7 +55,7 @@ app.use(
 );
 app.use(express.urlencoded({ extended: false }));
 
-// Request logger
+// ✅ Request logger
 app.use((req, res, next) => {
   const start = Date.now();
   const pathReq = req.path;
@@ -53,8 +71,10 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (pathReq.startsWith("/api")) {
       let logLine = `${req.method} ${pathReq} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      if (logLine.length > 80) logLine = logLine.slice(0, 79) + "…";
+      if (capturedJsonResponse)
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (logLine.length > 80)
+        logLine = logLine.slice(0, 79) + "…";
       log(logLine);
     }
   });
@@ -62,15 +82,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🎯 CRITICAL: API ROUTES FIRST (before Vite/static)
+// 🎯 API ROUTES FIRST (before Vite/static)
 (async () => {
-  // Connect MongoDB
+  // ✅ Connect MongoDB first
   await connectDB();
 
-  // 1) REGISTER API ROUTES FIRST - They take precedence
+  // ✅ Register API routes
   const server = await registerRoutes(app);
 
-  // 2) Error handler for API routes
+  // ✅ Global API error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -78,19 +98,19 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // 3) Frontend handling
+  // ✅ Frontend handling
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // Production: Serve React app from client/dist
-    const clientDistPath = path.resolve(process.cwd(), 'client/dist');
+    // ✅ Production: Serve React app
+    const clientDistPath = path.resolve(process.cwd(), "client/dist");
     app.use(express.static(clientDistPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(clientDistPath, 'index.html'));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.resolve(clientDistPath, "index.html"));
     });
   }
 
-  // 4) Start server
+  // ✅ Start server
   const port = parseInt(process.env.PORT || "5001", 10);
   server.listen(port, "0.0.0.0", () => {
     log(`🚀 Server running at http://localhost:${port}`);

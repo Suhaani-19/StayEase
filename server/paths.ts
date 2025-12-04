@@ -1,3 +1,4 @@
+//server/paths.ts
 import path from "path";
 import { fileURLToPath } from "url";
 
