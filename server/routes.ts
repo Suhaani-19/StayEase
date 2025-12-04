@@ -40,17 +40,27 @@ const ReviewSchema = new mongoose.Schema({
 
 let Review: any;
 
-// 🆕 REVIEWS ROUTES (2C 2R 2U 2D)
+// 🆕 REVIEWS ROUTES (2C 2R 2U 2D) - ✅ FIXED ObjectId ISSUE
 const setupReviewRoutes = (app: Express) => {
   Review = mongoose.model('Review', ReviewSchema, 'reviews');
 
-  // ✅ READ 1: GET /api/reviews (pagination + search + sort)
+  // ✅ FIXED READ 1: GET /api/reviews (SUPPORTS listingId FILTER)
   app.get('/api/reviews', async (req: any, res: any) => {
     try {
-      const { page = 1, limit = 10, search = '', sort = 'createdAt', order = 'desc' } = req.query;
-      const query = search ? { 
-        $or: [{ title: { $regex: search, $options: 'i' } }, { comment: { $regex: search, $options: 'i' } }]
-      } : {};
+      const { listingId, page = 1, limit = 10, search = '', sort = 'createdAt', order = 'desc' } = req.query;
+      let query: any = {};
+      
+      // ✅ SUPPORT listingId FILTER for ListingDetail
+      if (listingId && mongoose.Types.ObjectId.isValid(listingId)) {
+        query.listingId = new mongoose.Types.ObjectId(listingId);
+      }
+      
+      if (search) {
+        query.$or = [
+          { title: { $regex: search, $options: 'i' } },
+          { comment: { $regex: search, $options: 'i' } }
+        ];
+      }
       
       const reviews = await Review.find(query)
         .populate('userId', 'name email')
@@ -66,6 +76,7 @@ const setupReviewRoutes = (app: Express) => {
         pagination: { page: +page, limit: +limit, total, pages: Math.ceil(total / +limit) }
       });
     } catch (error: any) {
+      console.error('GET /api/reviews ERROR:', error.message);
       res.status(500).json({ error: error.message });
     }
   });
@@ -83,16 +94,40 @@ const setupReviewRoutes = (app: Express) => {
     }
   });
 
-  // ✅ CREATE 1: POST /api/reviews
+  // ✅ FIXED CREATE 1: POST /api/reviews (ObjectId CONVERSION)
   app.post('/api/reviews', async (req: any, res: any) => {
     try {
-      const review = new Review(req.body);
+      console.log('📥 Creating review:', req.body); // DEBUG
+      
+      const { title, comment, rating, userId, listingId } = req.body;
+      const cleanBody: any = { title, comment, rating };
+      
+      // ✅ CONVERT STRING IDs TO ObjectId
+      if (listingId && mongoose.Types.ObjectId.isValid(listingId)) {
+        cleanBody.listingId = new mongoose.Types.ObjectId(listingId);
+      } else {
+        throw new Error(`Invalid listingId: ${listingId}`);
+      }
+      
+      if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+        cleanBody.userId = new mongoose.Types.ObjectId(userId);
+      } else {
+        // ✅ Generate test user for demo
+        cleanBody.userId = new mongoose.Types.ObjectId();
+        console.log('⚠️ Using generated test userId');
+      }
+
+      const review = new Review(cleanBody);
       await review.save();
+      
       const populated = await Review.findById(review._id)
         .populate('userId', 'name email')
         .populate('listingId', 'title location');
+      
+      console.log('✅ Review created:', review._id); // DEBUG
       res.status(201).json(populated);
     } catch (error: any) {
+      console.error('🚨 POST /api/reviews ERROR:', error.message);
       res.status(400).json({ error: error.message });
     }
   });
