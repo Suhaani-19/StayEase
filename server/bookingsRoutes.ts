@@ -71,7 +71,7 @@ router.get("/", async (req: Request, res: Response) => {
     if (guestId) filter.guestId = guestId;
 
     let query = Booking.find(filter)
-      .populate("listingId", "title location price")
+      .populate("listingId", "title location price images")
       .populate("guestId", "name email")
       .sort({ createdAt: -1 });
 
