@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, MoreVertical } from "lucide-react";
+import { MapPin, Calendar, Users } from "lucide-react";
 
 interface BookingHistoryCardProps {
   id: string;
@@ -13,7 +13,9 @@ interface BookingHistoryCardProps {
   checkOut: string;
   guests: number;
   totalPrice: number;
-  status: "upcoming" | "completed" | "cancelled"; // ✅ Frontend status
+  status: "upcoming" | "completed" | "cancelled";
+  onViewDetails: (id: string) => void;
+  onCancel?: (id: string) => void;
 }
 
 export default function BookingHistoryCard({
@@ -26,6 +28,8 @@ export default function BookingHistoryCard({
   guests,
   totalPrice,
   status,
+  onViewDetails,
+  onCancel,
 }: BookingHistoryCardProps) {
   const statusColors = {
     upcoming: "bg-primary/10 text-primary",
@@ -33,21 +37,24 @@ export default function BookingHistoryCard({
     cancelled: "bg-destructive/10 text-destructive",
   };
 
-  const handleViewDetails = () => {
-    console.log("View booking details:", id);
-  };
-
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-col md:flex-row gap-4 p-4">
         <div className="relative w-full md:w-48 h-48 md:h-32 flex-shrink-0 overflow-hidden rounded-md">
-          <img src={image} alt={propertyName} className="w-full h-full object-cover" />
+          <img
+            src={image}
+            alt={propertyName}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-3">
             <div>
-              <h3 className="font-semibold text-lg mb-1 line-clamp-1" data-testid={`text-property-${id}`}>
+              <h3
+                className="font-semibold text-lg mb-1 line-clamp-1"
+                data-testid={`text-property-${id}`}
+              >
                 {propertyName}
               </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -55,7 +62,10 @@ export default function BookingHistoryCard({
                 <span className="line-clamp-1">{location}</span>
               </div>
             </div>
-            <Badge className={statusColors[status]} data-testid={`badge-status-${id}`}>
+            <Badge
+              className={statusColors[status]}
+              data-testid={`badge-status-${id}`}
+            >
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </Badge>
           </div>
@@ -65,21 +75,36 @@ export default function BookingHistoryCard({
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <div>
                 <div className="text-muted-foreground">Check-in</div>
-                <div className="font-medium" data-testid={`text-checkin-${id}`}>{checkIn}</div>
+                <div
+                  className="font-medium"
+                  data-testid={`text-checkin-${id}`}
+                >
+                  {checkIn}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <div>
                 <div className="text-muted-foreground">Check-out</div>
-                <div className="font-medium" data-testid={`text-checkout-${id}`}>{checkOut}</div>
+                <div
+                  className="font-medium"
+                  data-testid={`text-checkout-${id}`}
+                >
+                  {checkOut}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <div>
                 <div className="text-muted-foreground">Guests</div>
-                <div className="font-medium" data-testid={`text-guests-${id}`}>{guests}</div>
+                <div
+                  className="font-medium"
+                  data-testid={`text-guests-${id}`}
+                >
+                  {guests}
+                </div>
               </div>
             </div>
           </div>
@@ -87,15 +112,31 @@ export default function BookingHistoryCard({
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <span className="text-muted-foreground text-sm">Total: </span>
-              <span className="text-xl font-semibold" data-testid={`text-total-${id}`}>${totalPrice}</span>
+              <span
+                className="text-xl font-semibold"
+                data-testid={`text-total-${id}`}
+              >
+                ${totalPrice}
+              </span>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleViewDetails} data-testid={`button-view-${id}`}>
+              <Button
+                variant="outline"
+                onClick={() => onViewDetails(id)}
+                data-testid={`button-view-${id}`}
+              >
                 View Details
               </Button>
-              <Button variant="ghost" size="icon" data-testid={`button-more-${id}`}>
-                <MoreVertical className="h-5 w-5" />
-              </Button>
+
+              {status === "upcoming" && onCancel && (
+                <Button
+                  variant="ghost"
+                  onClick={() => onCancel(id)}
+                  data-testid={`button-cancel-${id}`}
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
           </div>
         </div>

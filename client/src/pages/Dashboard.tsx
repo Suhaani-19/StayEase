@@ -163,7 +163,14 @@ export default function Dashboard() {
                 </div>
               ) : realListings.length > 0 ? (
                 realListings.map((listing: any) => {
-                  const isOwner = listing.owner === localStorage.getItem("userId");
+                  // Handles both owner: "userId" and owner: { _id: "userId", ... }
+                  const ownerId =
+                    typeof listing.owner === "string"
+                      ? listing.owner
+                      : listing.owner?._id;
+
+                  const isOwner = ownerId === localStorage.getItem("userId");
+
                   return (
                     <ListingCard
                       key={listing._id || listing.id}
