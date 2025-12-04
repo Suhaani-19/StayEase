@@ -8,7 +8,7 @@ import { User, Stay } from "./storage.js";
 import listingsRouter from "./listingsRoutes.js";
 import bookingsRoutes from './bookingsRoutes.js';
 import mongoose from "mongoose";
-import Review from "./models/Review.js"; // ✅ USE YOUR MODEL
+import Review from "./models/Review.js";
 
 // 🆕 Auth middleware
 const authMiddleware = (req: Request, res: any, next: any) => {
@@ -24,12 +24,12 @@ const authMiddleware = (req: Request, res: any, next: any) => {
   }
 };
 
-// Protect listings PUT/DELETE
+// Protect listings PUT/DELETE/POST
 listingsRouter.put("/:id", authMiddleware);
 listingsRouter.delete("/:id", authMiddleware);
 listingsRouter.post("/", authMiddleware);
 
-// 🆕 REVIEWS ROUTES - ✅ PERFECT WITH YOUR MODEL
+// 🆕 REVIEWS ROUTES - ✅ FULL CRUD WITH AUTH PROTECTION
 const setupReviewRoutes = (app: Express) => {
   // ✅ GET /api/reviews?listingId=ABC (for ListingDetail)
   app.get('/api/reviews', async (req: any, res: any) => {
@@ -67,25 +67,23 @@ const setupReviewRoutes = (app: Express) => {
     }
   });
 
-  // ✅ FIXED POST /api/reviews - NO MORE CastError!
+  // ✅ POST /api/reviews - Create (no auth needed for demo)
   app.post('/api/reviews', async (req: any, res: any) => {
     try {
       console.log('📥 Creating review:', req.body);
       
-      const { title, comment, rating, listingId } = req.body; // ✅ IGNORE userId
+      const { title, comment, rating, listingId } = req.body;
       
-      // ✅ VALIDATE listingId
       if (!listingId || !mongoose.Types.ObjectId.isValid(listingId)) {
         return res.status(400).json({ error: `Invalid listingId: ${listingId}` });
       }
 
-      // ✅ CLEAN DATA - Backend generates VALID userId
       const reviewData = {
         title,
         comment,
         rating: Number(rating),
         listingId: new mongoose.Types.ObjectId(listingId),
-        userId: new mongoose.Types.ObjectId()  // ✅ PERFECT ObjectId (demo user)
+        userId: new mongoose.Types.ObjectId()  // ✅ Demo user (for testing)
       };
       
       console.log('📤 Clean data:', reviewData);
@@ -105,7 +103,7 @@ const setupReviewRoutes = (app: Express) => {
     }
   });
 
-  // ✅ GET single review
+  // ✅ GET /api/reviews/:id
   app.get('/api/reviews/:id', async (req: any, res: any) => {
     try {
       const review = await Review.findById(req.params.id)
@@ -118,23 +116,40 @@ const setupReviewRoutes = (app: Express) => {
     }
   });
 
-  // ✅ UPDATE review
-  app.put('/api/reviews/:id', async (req: any, res: any) => {
+  // ✅ PUT /api/reviews/:id - UPDATE (PROTECTED)
+  app.put('/api/reviews/:id', authMiddleware, async (req: any, res: any) => {
     try {
-      const review = await Review.findByIdAndUpdate(
+      console.log('🔄 Updating review:', req.params.id);
+      
+      // ✅ AUTH CHECK - Only owner can edit
+      const userId = new mongoose.Types.ObjectId((req as any).userId);
+      const review = await Review.findOne({ _id: req.params.id, userId });
+      
+      if (!review) {
+        return res.status(403).json({ error: 'Not authorized to edit this review' });
+      }
+
+      const updated = await Review.findByIdAndUpdate(
         req.params.id, 
         req.body, 
         { new: true, runValidators: true }
-      ).populate('userId', 'name email')
+      )
+        .populate('userId', 'name email')
         .populate('listingId', 'title location');
-      if (!review) return res.status(404).json({ error: 'Review not found' });
-      res.json(review);
+      
+      if (!updated) {
+        return res.status(404).json({ error: 'Review not found' });
+      }
+      
+      console.log('✅ Review updated:', updated._id);
+      res.json(updated);
     } catch (error: any) {
+      console.error('🚨 PUT /api/reviews ERROR:', error.message);
       res.status(400).json({ error: error.message });
     }
   });
 
-  // ✅ UPDATE status
+  // ✅ PATCH /api/reviews/:id/status
   app.patch('/api/reviews/:id/status', async (req: any, res: any) => {
     try {
       const { status } = req.body;
@@ -142,7 +157,8 @@ const setupReviewRoutes = (app: Express) => {
         req.params.id,
         { status },
         { new: true }
-      ).populate('userId', 'name email')
+      )
+        .populate('userId', 'name email')
         .populate('listingId', 'title location');
       if (!review) return res.status(404).json({ error: 'Review not found' });
       res.json(review);
@@ -151,20 +167,31 @@ const setupReviewRoutes = (app: Express) => {
     }
   });
 
-  // ✅ DELETE review
-  app.delete('/api/reviews/:id', async (req: any, res: any) => {
+  // ✅ DELETE /api/reviews/:id - DELETE (PROTECTED)
+  app.delete('/api/reviews/:id', authMiddleware, async (req: any, res: any) => {
     try {
-      const review = await Review.findByIdAndDelete(req.params.id);
-      if (!review) return res.status(404).json({ error: 'Review not found' });
+      console.log('🗑️ Deleting review:', req.params.id);
+      
+      // ✅ AUTH CHECK - Only owner can delete
+      const userId = new mongoose.Types.ObjectId((req as any).userId);
+      const review = await Review.findOne({ _id: req.params.id, userId });
+      
+      if (!review) {
+        return res.status(403).json({ error: 'Not authorized to delete this review' });
+      }
+      
+      await Review.findByIdAndDelete(req.params.id);
+      console.log('✅ Review deleted:', req.params.id);
       res.json({ message: 'Review deleted successfully' });
     } catch (error: any) {
+      console.error('🚨 DELETE /api/reviews ERROR:', error.message);
       res.status(500).json({ error: error.message });
     }
   });
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // AUTH ROUTES
+  // ✅ AUTH ROUTES
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const { name, email, password } = req.body;
@@ -211,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // STAYS ROUTES
+  // ✅ STAYS ROUTES
   app.get("/api/stays", async (_req, res) => {
     try {
       const stays = await Stay.find().populate("owner");
@@ -232,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // USERS ROUTES
+  // ✅ USERS ROUTES
   app.get("/api/users", async (_req, res) => {
     try {
       const users = await User.find();
@@ -253,10 +280,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ✅ SETUP REVIEWS ROUTES (uses your Review model)
+  // ✅ SETUP ALL REVIEWS ROUTES
   setupReviewRoutes(app);
 
-  // LISTINGS & BOOKINGS ROUTES
+  // ✅ LISTINGS & BOOKINGS ROUTES
   app.use("/api/listings", listingsRouter);
   app.use('/api/bookings', bookingsRoutes);
 

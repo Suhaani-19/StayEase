@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BookingCard from "@/components/BookingCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useRoute, Link } from "wouter";
-import { MapPin, Star, Wifi, Car, Waves, Wind, Users, Home } from "lucide-react";
+import { MapPin, Star, Wifi, Car, Waves, Wind, Users, Home, Edit3, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
 type Listing = {
   _id?: string;
@@ -35,7 +36,7 @@ type Listing = {
 
 type Review = {
   _id?: string;
-  userId?: { name?: string };
+  userId?: { _id?: string; name?: string };
   title: string;
   comment: string;
   rating: number;
@@ -50,6 +51,15 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', comment: '', rating: 5 });
+
+  // ✅ GET CURRENT USER
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId");
+    setUserId(storedUserId || null);
+  }, []);
 
   // Fetch listing by id
   useEffect(() => {
@@ -93,6 +103,73 @@ export default function ListingDetail() {
 
     fetchReviews();
   }, [id]);
+
+  // ✅ CHECK IF CURRENT USER OWNS REVIEW
+  const isCurrentUserReview = (review: Review) => {
+    return userId && review.userId?._id === userId;
+  };
+
+  // ✅ HANDLE EDIT REVIEW
+  const handleEditReview = async (reviewId: string) => {
+    if (!editForm.title || !editForm.comment) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (res.ok) {
+        // Refresh reviews
+        const params = new URLSearchParams({ listingId: id! });
+        const reviewRes = await fetch(`${API_URL}/api/reviews?${params}`);
+        const data = await reviewRes.json();
+        setReviews(data.reviews || []);
+        setEditingReviewId(null);
+      } else {
+        alert("Edit failed");
+      }
+    } catch (err) {
+      alert("Edit failed - check console");
+      console.error("Edit error:", err);
+    }
+  };
+
+  // ✅ HANDLE DELETE REVIEW
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm("Are you sure you want to delete this review?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        // Refresh reviews
+        const params = new URLSearchParams({ listingId: id! });
+        const reviewRes = await fetch(`${API_URL}/api/reviews?${params}`);
+        const data = await reviewRes.json();
+        setReviews(data.reviews || []);
+      } else {
+        alert("Delete failed");
+      }
+    } catch (err) {
+      alert("Delete failed - check console");
+      console.error("Delete error:", err);
+    }
+  };
 
   if (!id) {
     return (
@@ -153,9 +230,7 @@ export default function ListingDetail() {
           "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
         ];
 
-  // 👇 derive host info dynamically from listing
-  const hostName =
-    owner?.name || ownerName || localStorage.getItem("userName") || "Host";
+  const hostName = owner?.name || ownerName || localStorage.getItem("userName") || "Host";
   const hostJoinedDate = owner?.joinedDate || "Joined recently";
   const hostResponseRate = owner?.responseRate || "100%";
   const hostResponseTime = owner?.responseTime || "Within an hour";
@@ -175,10 +250,7 @@ export default function ListingDetail() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         <div className="mb-6">
-          <h1
-            className="text-3xl font-serif font-semibold mb-2"
-            data-testid="text-title"
-          >
+          <h1 className="text-3xl font-serif font-semibold mb-2" data-testid="text-title">
             {title}
           </h1>
           <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -187,9 +259,7 @@ export default function ListingDetail() {
               <span className="font-medium" data-testid="text-rating">
                 {rating.toFixed(1)}
               </span>
-              <span className="text-muted-foreground">
-                ({reviews.length} reviews)
-              </span>
+              <span className="text-muted-foreground">({reviews.length} reviews)</span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <MapPin className="h-4 w-4" />
@@ -200,11 +270,7 @@ export default function ListingDetail() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 rounded-xl overflow-hidden mb-8">
           <div className="col-span-2 row-span-2">
-            <img
-              src={displayImages[0]}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
+            <img src={displayImages[0]} alt={title} className="w-full h-full object-cover" />
           </div>
           {displayImages.slice(1, 4).map((image, index) => (
             <div key={index}>
@@ -219,10 +285,9 @@ export default function ListingDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            {/* YOUR EXISTING LISTING CONTENT */}
             <div>
-              <h2 className="text-2xl font-semibold mb-4">
-                {type} hosted by {hostName}
-              </h2>
+              <h2 className="text-2xl font-semibold mb-4">{type} hosted by {hostName}</h2>
               <div className="flex gap-4 text-muted-foreground mb-6">
                 <span>{guests} guests</span>
                 <span>•</span>
@@ -232,15 +297,11 @@ export default function ListingDetail() {
                 <span>•</span>
                 <span>{baths} baths</span>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
-                {description}
-              </p>
+              <p className="text-muted-foreground leading-relaxed">{description}</p>
             </div>
 
             <div className="border-t pt-8">
-              <h3 className="text-xl font-semibold mb-4">
-                What this place offers
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">What this place offers</h3>
               <div className="grid grid-cols-2 gap-4">
                 {amenities.map((amenity, index) => (
                   <div key={index} className="flex items-center gap-3">
@@ -256,34 +317,25 @@ export default function ListingDetail() {
               <div className="flex items-start gap-6 p-6 bg-muted/30 rounded-xl">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback>
-                    {hostName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                    {hostName.split(" ").map((n) => n[0]).join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h4 className="font-semibold text-lg mb-1">{hostName}</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {hostJoinedDate}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">{hostJoinedDate}</p>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <div className="font-medium">
-                        Response rate: {hostResponseRate}
-                      </div>
+                      <div className="font-medium">Response rate: {hostResponseRate}</div>
                     </div>
                     <div>
-                      <div className="font-medium">
-                        Response time: {hostResponseTime}
-                      </div>
+                      <div className="font-medium">Response time: {hostResponseTime}</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ✅ COMPLETE REVIEWS SECTION */}
+            {/* ✅ REVIEWS SECTION WITH EDIT/DELETE */}
             <div className="border-t pt-8">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -313,15 +365,13 @@ export default function ListingDetail() {
               ) : (
                 <div className="space-y-6">
                   {reviews.map((review) => (
-                    <div key={review._id} className="bg-white p-6 rounded-xl shadow-sm border">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
+                    <div key={review._id} className="bg-white p-6 rounded-xl shadow-sm border relative">
+                      {/* ✅ REVIEW HEADER WITH ACTION BUTTONS */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3 flex-1">
                           <Avatar className="h-10 w-10">
                             <AvatarFallback>
-                              {review.userId?.name
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("") || "G"}
+                              {review.userId?.name?.split(" ").map((n) => n[0]).join("") || "G"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -329,17 +379,100 @@ export default function ListingDetail() {
                             <div className="flex text-yellow-400 text-lg">
                               {'★'.repeat(review.rating)}
                             </div>
+                            <div className="text-sm text-muted-foreground">
+                              {review.createdAt 
+                                ? new Date(review.createdAt).toLocaleDateString() 
+                                : 'Recent'
+                              }
+                            </div>
                           </div>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {review.createdAt 
-                            ? new Date(review.createdAt).toLocaleDateString() 
-                            : 'Recent'
-                          }
-                        </span>
+                        
+                        {/* ✅ EDIT/DELETE BUTTONS - ONLY FOR CURRENT USER */}
+                        {isCurrentUserReview(review) && (
+                          <div className="flex gap-2 ml-4 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingReviewId(review._id || null);
+                                setEditForm({ 
+                                  title: review.title, 
+                                  comment: review.comment, 
+                                  rating: review.rating 
+                                });
+                              }}
+                              className="h-8 px-2 text-xs"
+                            >
+                              <Edit3 className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteReview(review._id!)}
+                              className="h-8 px-2 text-xs"
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <h4 className="font-semibold text-lg mb-2">{review.title}</h4>
-                      <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+
+                      {/* ✅ EDIT FORM OR REVIEW CONTENT */}
+                      {editingReviewId === review._id ? (
+                        <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+                          <Input
+                            value={editForm.title}
+                            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                            placeholder="Review title"
+                            className="font-semibold"
+                          />
+                          <Textarea
+                            value={editForm.comment}
+                            onChange={(e) => setEditForm({ ...editForm, comment: e.target.value })}
+                            rows={3}
+                            placeholder="Your review..."
+                          />
+                          <div className="flex items-center gap-3">
+                            <label className="text-sm font-medium">Rating:</label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={5}
+                              value={editForm.rating}
+                              onChange={(e) => setEditForm({ ...editForm, rating: +e.target.value })}
+                              className="w-16"
+                            />
+                            <div className="flex text-yellow-400 text-lg ml-2">
+                              {'★'.repeat(editForm.rating)}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleEditReview(review._id!)}
+                              className="flex-1"
+                            >
+                              Save Changes
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingReviewId(null)}
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <h4 className="font-semibold text-lg mb-2">{review.title}</h4>
+                          <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
