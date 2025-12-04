@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 interface BookingHistoryCardProps {
   id: string;
@@ -29,7 +29,7 @@ export default function BookingHistoryCard({
   status,
   onCancel,
 }: BookingHistoryCardProps) {
-  const navigate = useNavigate(); // ✅ CORRECT SPA NAVIGATION
+  const [, navigate] = useLocation(); // ✅ Wouter navigation
 
   const statusColors = {
     upcoming: "bg-primary/10 text-primary",
@@ -41,13 +41,19 @@ export default function BookingHistoryCard({
     <Card className="overflow-hidden">
       <div className="flex flex-col md:flex-row gap-4 p-4">
         <div className="relative w-full md:w-48 h-48 md:h-32 overflow-hidden rounded-md">
-          <img src={image} alt={propertyName} className="w-full h-full object-cover" />
+          <img
+            src={image}
+            alt={propertyName}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 mb-3">
             <div>
-              <h3 className="font-semibold text-lg mb-1">{propertyName}</h3>
+              <h3 className="font-semibold text-lg mb-1">
+                {propertyName}
+              </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>{location}</span>
@@ -87,20 +93,27 @@ export default function BookingHistoryCard({
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <span className="text-muted-foreground text-sm">Total: </span>
-              <span className="text-xl font-semibold">${totalPrice}</span>
+              <span className="text-muted-foreground text-sm">
+                Total:{" "}
+              </span>
+              <span className="text-xl font-semibold">
+                ${totalPrice}
+              </span>
             </div>
 
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => navigate(`/booking/${id}`)} // ✅ FIXED
+                onClick={() => navigate(`/booking/${id}`)} // ✅ FIXED SPA NAV
               >
                 View Details
               </Button>
 
               {status === "upcoming" && onCancel && (
-                <Button variant="ghost" onClick={() => onCancel(id)}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onCancel(id)}
+                >
                   Cancel
                 </Button>
               )}

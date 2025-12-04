@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { MapPin, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 type ListingCardProps = {
   _id?: string;
@@ -12,6 +11,7 @@ type ListingCardProps = {
   reviewCount?: number;
   images?: string[];
   type?: string;
+  onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 };
 
@@ -26,10 +26,9 @@ export default function ListingCard(props: ListingCardProps) {
     reviewCount,
     images = [],
     type,
+    onEdit,
     onDelete,
   } = props;
-
-  const navigate = useNavigate(); // ✅ CORRECT PLACE
 
   const listingId = _id || id;
 
@@ -61,14 +60,18 @@ export default function ListingCard(props: ListingCardProps) {
                 {rating ? rating.toFixed(1) : "New"}
               </span>
               {reviewCount !== undefined && (
-                <span className="text-muted-foreground">({reviewCount})</span>
+                <span className="text-muted-foreground">
+                  ({reviewCount})
+                </span>
               )}
             </div>
           )}
         </div>
 
         {type && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{type}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1">
+            {type}
+          </p>
         )}
 
         <div className="flex items-baseline gap-1">
@@ -76,19 +79,21 @@ export default function ListingCard(props: ListingCardProps) {
           <span className="text-xs text-muted-foreground">/ night</span>
         </div>
 
-        {listingId && (
+        {listingId && (onEdit || onDelete) && (
           <div className="mt-3 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              className="text-xs px-2 py-1 rounded border border-primary text-primary hover:bg-primary/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                navigate(`/edit-listing/${listingId}`); // ✅ FIXED
-              }}
-            >
-              Edit
-            </button>
+            {onEdit && (
+              <button
+                type="button"
+                className="text-xs px-2 py-1 rounded border border-primary text-primary hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onEdit(listingId);
+                }}
+              >
+                Edit
+              </button>
+            )}
 
             {onDelete && (
               <button
@@ -109,7 +114,7 @@ export default function ListingCard(props: ListingCardProps) {
     </div>
   );
 
-  const shouldLink = listingId;
+  const shouldLink = listingId && !onEdit && !onDelete;
 
   if (shouldLink) {
     return (
