@@ -15,6 +15,8 @@ import ListingDetail from "@/pages/ListingDetail";
 import SearchResults from "@/pages/SearchResults";
 import NotFound from "@/pages/not-found";
 import ListingEdit from "@/pages/ListingEdit";
+import ReviewCreate from "@/pages/ReviewCreate";
+import ReviewEdit from "@/pages/ReviewEdit";
 
 function Router() {
   return (
@@ -32,7 +34,8 @@ function Router() {
       <Route path="/listing/:id" component={ListingDetail} />
       <Route path="/edit-listing/:id" component={ListingEdit} />
       <Route path="/search" component={SearchResults} />
-      
+      <Route path="/reviews/create" component={ReviewCreate} />
+      <Route path="/reviews/edit/:id" component={ReviewEdit} />
       <Route component={NotFound} />
     </Switch>
   );

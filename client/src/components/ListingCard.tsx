@@ -79,6 +79,15 @@ export default function ListingCard(props: ListingCardProps) {
           <span className="text-xs text-muted-foreground">/ night</span>
         </div>
 
+        {/* ✅ NEW WRITE REVIEW BUTTON */}
+        <div className="pt-2 border-t">
+          <Link href={`/reviews/create?listingId=${listingId}`}>
+            <button className="w-full text-xs bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-md transition-colors text-center">
+              ✍️ Write a Review
+            </button>
+          </Link>
+        </div>
+
         {listingId && (onEdit || onDelete) && (
           <div className="mt-3 flex items-center justify-end gap-2">
             {onEdit && (
