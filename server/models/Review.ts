@@ -1,3 +1,5 @@
+//server/models/Review.ts
+
 import mongoose from 'mongoose';
 
 const reviewSchema = new mongoose.Schema({

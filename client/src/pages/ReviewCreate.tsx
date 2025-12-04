@@ -12,8 +12,7 @@ export default function ReviewCreate() {
     title: '', 
     comment: '', 
     rating: 5, 
-    userId: 'test-user-id', 
-    listingId: '' 
+    listingId: ''  // ✅ NO userId - backend handles it!
   });
   const [loading, setLoading] = useState(false);
 
@@ -31,14 +30,17 @@ export default function ReviewCreate() {
     setLoading(true);
     
     try {
+      console.log('🚀 Submitting:', form); // DEBUG
+      
       const response = await fetch(`${API_URL}/api/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(form),  // ✅ NO userId sent!
       });
 
       if (response.ok) {
-        window.location.href = `/listing/${form.listingId}`; // ✅ BACK TO LISTING
+        console.log('✅ Review created! Redirecting...');
+        window.location.href = `/listing/${form.listingId}`;
       } else {
         const error = await response.json();
         alert(`Error: ${error.error || 'Failed to create review'}`);
@@ -58,18 +60,20 @@ export default function ReviewCreate() {
         <h1 className="text-2xl font-bold mb-6 text-center">Write a Review</h1>
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow">
           <Input 
-            placeholder="Title" 
+            placeholder="Review title" 
             value={form.title} 
             onChange={e => setForm({ ...form, title: e.target.value })}
             required 
           />
+          
           <Textarea 
-            placeholder="Your review..." 
+            placeholder="Tell us about your stay..." 
             value={form.comment} 
             onChange={e => setForm({ ...form, comment: e.target.value })}
             rows={4}
             required 
           />
+          
           <Input 
             type="number" 
             min={1} 
@@ -81,21 +85,21 @@ export default function ReviewCreate() {
           />
           
           {form.listingId && (
-            <div className="text-sm bg-green-50 p-3 rounded">
+            <div className="text-sm bg-green-50 p-3 rounded border">
               ✅ Listing ID: <code>{form.listingId}</code>
             </div>
           )}
           
-          <div className="text-xs text-gray-500 text-center">
-            User ID auto-set for demo
+          <div className="text-xs text-gray-500 text-center py-2">
+            👤 User auto-assigned by server
           </div>
           
           <div className="flex gap-2">
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Creating...' : 'Create Review'}
+              {loading ? '📝 Creating Review...' : '✅ Post Review'}
             </Button>
             <Link href={form.listingId ? `/listing/${form.listingId}` : '/'}>
-              <Button variant="outline" disabled={loading}>Cancel</Button>
+              <Button variant="outline" disabled={loading}>❌ Cancel</Button>
             </Link>
           </div>
         </form>
