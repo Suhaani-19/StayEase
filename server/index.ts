@@ -12,13 +12,6 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Allow only trusted origins (NO wildcard with credentials)
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:5173",
-  "https://stayease-1-mijo.onrender.com",
-].filter(Boolean);
-
 // Extend IncomingMessage to store raw body
 declare module "http" {
   interface IncomingMessage {
@@ -26,26 +19,15 @@ declare module "http" {
   }
 }
 
-// ✅ CORS MIDDLEWARE (FIXED & SAFE)
+// ✅ CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: process.env.FRONTEND_URL || true,
     credentials: true,
   })
 );
 
-// ✅ Explicit preflight handler (THIS fixes your PUT 404)
-app.options("*", cors());
-
-// ✅ Body parser with raw body capture
+// ✅ Body parsers
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -71,10 +53,8 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (pathReq.startsWith("/api")) {
       let logLine = `${req.method} ${pathReq} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse)
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      if (logLine.length > 80)
-        logLine = logLine.slice(0, 79) + "…";
+      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
       log(logLine);
     }
   });
@@ -82,36 +62,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🎯 API ROUTES FIRST (before Vite/static)
 (async () => {
-  // ✅ Connect MongoDB first
+  // ✅ Connect DB
   await connectDB();
 
-  // ✅ Register API routes
+  // ✅ REGISTER ALL API ROUTES FIRST
   const server = await registerRoutes(app);
 
-  // ✅ Global API error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // ✅ API ERROR HANDLER
+  app.use("/api", (err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
-    throw err;
   });
 
-  // ✅ Frontend handling
+  // ✅ FRONTEND HANDLING
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    // ✅ Production: Serve React app
     const clientDistPath = path.resolve(process.cwd(), "client/dist");
     app.use(express.static(clientDistPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.resolve(clientDistPath, "index.html"));
+
+    // ✅ IMPORTANT: Only fallback when NOT /api
+    app.get(/^\/(?!api).*/, (_req, res) => {
+      res.sendFile(path.join(clientDistPath, "index.html"));
     });
   }
 
-  // ✅ Start server
-  const port = parseInt(process.env.PORT || "5001", 10);
+  // ✅ START SERVER
+  const port = Number(process.env.PORT) || 5001;
   server.listen(port, "0.0.0.0", () => {
     log(`🚀 Server running at http://localhost:${port}`);
   });
