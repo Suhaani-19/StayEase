@@ -29,36 +29,32 @@ export default function BookingEdit() {
   }, [bookingId]);
 
   const fetchData = async (id: string) => {
-    try {
-      const token = localStorage.getItem("token");
+  try {
+    const token = localStorage.getItem("token");
+    console.log('🔑 TOKEN:', token ? 'EXISTS' : 'MISSING');  // ← ADD THIS
+    console.log('🆔 BOOKING ID:', id);  // ← ADD THIS
 
-      // Fetch booking
-      const bookingRes = await fetch(`${API_URL}/api/bookings/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!bookingRes.ok) throw new Error("Failed to load booking");
-      const bookingData = await bookingRes.json();
-      setBooking(bookingData);
-      setStatus(bookingData.status);
+    // Fetch booking
+    console.log('📡 GET /api/bookings/', id);  // ← ADD THIS
+    const bookingRes = await fetch(`${API_URL}/api/bookings/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log('📡 Booking response:', bookingRes.status);  // ← ADD THIS
+    
+    if (!bookingRes.ok) throw new Error("Failed to load booking");
+    const bookingData = await bookingRes.json();
+    console.log('✅ Booking data:', bookingData);  // ← ADD THIS
+    setBooking(bookingData);
+    setStatus(bookingData.status);
 
-      // Fetch listing (handle populated or plain id)
-      if (bookingData.listingId) {
-        const listingId =
-          typeof bookingData.listingId === "string"
-            ? bookingData.listingId
-            : bookingData.listingId._id;
+    // Rest of code...
+  } catch (err) {
+    console.error('💥 FULL ERROR:', err);  // ← ADD THIS
+  } finally {
+    setLoading(false);
+  }
+};
 
-        const listingRes = await fetch(`${API_URL}/api/listings/${listingId}`);
-        if (!listingRes.ok) throw new Error("Failed to load listing");
-        const listingData = await listingRes.json();
-        setListing(listingData);
-      }
-    } catch (err) {
-      console.error("Failed to fetch data", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const updateBooking = async () => {
     if (!bookingId) return;
