@@ -7,6 +7,7 @@ import { createServer, type Server } from "http";
 import { User, Stay } from "./storage.js";
 import listingsRouter from "./listingsRoutes.js";
 import bookingsRoutes from './bookingsRoutes.js';
+import mongoose from "mongoose";
 
 // 🆕 Auth middleware
 const authMiddleware = (req: Request, res: any, next: any) => {
@@ -27,9 +28,143 @@ listingsRouter.put("/:id", authMiddleware);
 listingsRouter.delete("/:id", authMiddleware);
 listingsRouter.post("/", authMiddleware);
 
+// 🆕 REVIEW SCHEMA & MODEL
+const ReviewSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  comment: { type: String, required: true },
+  rating: { type: Number, min: 1, max: 5, required: true },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  listingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', required: true },
+}, { timestamps: true });
+
+let Review: any;
+
+// 🆕 REVIEWS ROUTES (2C 2R 2U 2D)
+const setupReviewRoutes = (app: Express) => {
+  Review = mongoose.model('Review', ReviewSchema, 'reviews');
+
+  // ✅ READ 1: GET /api/reviews (pagination + search + sort)
+  app.get('/api/reviews', async (req: any, res: any) => {
+    try {
+      const { page = 1, limit = 10, search = '', sort = 'createdAt', order = 'desc' } = req.query;
+      const query = search ? { 
+        $or: [{ title: { $regex: search, $options: 'i' } }, { comment: { $regex: search, $options: 'i' } }]
+      } : {};
+      
+      const reviews = await Review.find(query)
+        .populate('userId', 'name email')
+        .populate('listingId', 'title location')
+        .sort({ [sort]: order === 'desc' ? -1 : 1 })
+        .limit(+limit)
+        .skip((+page - 1) * +limit);
+      
+      const total = await Review.countDocuments(query);
+      
+      res.json({
+        reviews,
+        pagination: { page: +page, limit: +limit, total, pages: Math.ceil(total / +limit) }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ✅ READ 2: GET /api/reviews/:id
+  app.get('/api/reviews/:id', async (req: any, res: any) => {
+    try {
+      const review = await Review.findById(req.params.id)
+        .populate('userId', 'name email')
+        .populate('listingId', 'title location');
+      if (!review) return res.status(404).json({ error: 'Review not found' });
+      res.json(review);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ✅ CREATE 1: POST /api/reviews
+  app.post('/api/reviews', async (req: any, res: any) => {
+    try {
+      const review = new Review(req.body);
+      await review.save();
+      const populated = await Review.findById(review._id)
+        .populate('userId', 'name email')
+        .populate('listingId', 'title location');
+      res.status(201).json(populated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ✅ CREATE 2: POST /api/reviews/bulk
+  app.post('/api/reviews/bulk', async (req: any, res: any) => {
+    try {
+      const reviews = await Review.insertMany(req.body);
+      res.status(201).json(reviews);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ✅ UPDATE 1: PUT /api/reviews/:id
+  app.put('/api/reviews/:id', async (req: any, res: any) => {
+    try {
+      const review = await Review.findByIdAndUpdate(
+        req.params.id, 
+        req.body, 
+        { new: true, runValidators: true }
+      ).populate('userId', 'name email')
+        .populate('listingId', 'title location');
+      if (!review) return res.status(404).json({ error: 'Review not found' });
+      res.json(review);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ✅ UPDATE 2: PATCH /api/reviews/:id/status
+  app.patch('/api/reviews/:id/status', async (req: any, res: any) => {
+    try {
+      const { status } = req.body;
+      const review = await Review.findByIdAndUpdate(
+        req.params.id,
+        { status },
+        { new: true }
+      ).populate('userId', 'name email')
+        .populate('listingId', 'title location');
+      if (!review) return res.status(404).json({ error: 'Review not found' });
+      res.json(review);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // ✅ DELETE 1: DELETE /api/reviews/:id
+  app.delete('/api/reviews/:id', async (req: any, res: any) => {
+    try {
+      const review = await Review.findByIdAndDelete(req.params.id);
+      if (!review) return res.status(404).json({ error: 'Review not found' });
+      res.json({ message: 'Review deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ✅ DELETE 2: DELETE /api/reviews/bulk
+  app.delete('/api/reviews/bulk', async (req: any, res: any) => {
+    try {
+      const { ids } = req.body;
+      const result = await Review.deleteMany({ _id: { $in: ids } });
+      res.json({ message: `${result.deletedCount} reviews deleted` });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // AUTH ROUTES (unchanged)
+  // AUTH ROUTES
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const { name, email, password } = req.body;
@@ -76,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // STAYS ROUTES (unchanged)
+  // STAYS ROUTES
   app.get("/api/stays", async (_req, res) => {
     try {
       const stays = await Stay.find().populate("owner");
@@ -97,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // USERS ROUTES (unchanged)
+  // USERS ROUTES
   app.get("/api/users", async (_req, res) => {
     try {
       const users = await User.find();
@@ -117,6 +252,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: err.message });
     }
   });
+
+  // ✅ SETUP REVIEWS ROUTES
+  setupReviewRoutes(app);
 
   // LISTINGS & BOOKINGS ROUTES
   app.use("/api/listings", listingsRouter);

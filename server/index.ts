@@ -62,6 +62,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// 🆕 ADD DB TO REQ OBJECT
+app.use((req, res, next) => {
+  (req as any).db = app.locals.db || app;
+  next();
+});
+
 (async () => {
   // ✅ Connect DB
   await connectDB();
