@@ -4,12 +4,52 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
-import { Listing } from "./models/Listing.js";
+import {Listing} from "./models/Listing.js";
 
 const router = Router();
 
 /* -----------------------------------------------------
-   NEW: PUBLIC ENDPOINT → Get ALL listings (no login)
+   🔍 SEARCH LISTINGS (PUBLIC) — MUST BE FIRST
+----------------------------------------------------- */
+router.get("/search", async (req, res) => {
+  try {
+    const {
+      keyword,
+      location,
+      minPrice,
+      maxPrice,
+      type,
+    } = req.query;
+
+    const filter: any = {};
+
+    if (keyword) {
+      filter.$or = [
+        { title: new RegExp(keyword as string, "i") },
+        { description: new RegExp(keyword as string, "i") },
+        { location: new RegExp(keyword as string, "i") },
+      ];
+    }
+
+    if (location) filter.location = new RegExp(location as string, "i");
+    if (type) filter.type = type;
+
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    const listings = await Listing.find(filter).sort({ createdAt: -1 });
+    res.json(listings);
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* -----------------------------------------------------
+   PUBLIC → Get ALL listings (no login)
 ----------------------------------------------------- */
 router.get("/all", async (_req: Request, res: Response) => {
   try {
@@ -22,7 +62,7 @@ router.get("/all", async (_req: Request, res: Response) => {
 });
 
 /* -----------------------------------------------------
-   PROTECTED: Get only MY listings
+   PROTECTED → Only MY listings
 ----------------------------------------------------- */
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -44,16 +84,12 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 /* -----------------------------------------------------
-   Get single listing (public)
+   Get single listing (PUBLIC)
 ----------------------------------------------------- */
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        message:
-          "Invalid listing ID. Must be a valid MongoDB ObjectId (24 hex characters).",
-      });
-    }
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(400).json({ message: "Invalid listing ID" });
 
     const listing = await Listing.findById(req.params.id).populate(
       "owner",
@@ -70,7 +106,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 });
 
 /* -----------------------------------------------------
-   Create listing (protected)
+   Create listing (PROTECTED)
 ----------------------------------------------------- */
 router.post("/", async (req: Request, res: Response) => {
   try {
@@ -95,7 +131,7 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 /* -----------------------------------------------------
-   Update listing (protected + owner only)
+   Update listing (PROTECTED + owner only)
 ----------------------------------------------------- */
 router.put("/:id", async (req: Request, res: Response) => {
   try {
@@ -126,7 +162,7 @@ router.put("/:id", async (req: Request, res: Response) => {
 });
 
 /* -----------------------------------------------------
-   Delete listing (protected + owner only)
+   Delete listing (PROTECTED + owner only)
 ----------------------------------------------------- */
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
@@ -154,112 +190,5 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-// ----------------------
-// ADVANCED LISTING SEARCH
-// GET /api/listings/search
-// ----------------------
-router.get("/search", async (req, res) => {
-  try {
-    const {
-      keyword,
-      location,
-      minPrice,
-      maxPrice,
-      type,
-      startDate,
-      endDate,
-      sort,
-      amenities,
-      rating,
-      page = 1,
-      limit = 20,
-    } = req.query;
-
-    // Build Mongo query
-    const query: any = {};
-
-    // Keyword search
-    if (keyword) {
-      query.$or = [
-        { title: new RegExp(keyword as string, "i") },
-        { description: new RegExp(keyword as string, "i") },
-        { location: new RegExp(keyword as string, "i") },
-      ];
-    }
-
-    // Location
-    if (location) {
-      query.location = new RegExp(location as string, "i");
-    }
-
-    // Type (apartment | house | villa | hotel)
-    if (type) {
-      query.type = type;
-    }
-
-    // Price range
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
-    }
-
-    // Availability
-    if (startDate && endDate) {
-      query.availableFrom = { $lte: new Date(startDate as string) };
-      query.availableTo = { $gte: new Date(endDate as string) };
-    }
-
-    // Amenities (array)
-    if (amenities) {
-      query.amenities = { $all: (amenities as string).split(",") };
-    }
-
-    // Rating filter
-    if (rating) {
-      query.rating = { $gte: Number(rating) };
-    }
-
-    // Sorting
-    let sortOption: any = {};
-    switch (sort) {
-      case "price_low_high":
-        sortOption.price = 1;
-        break;
-      case "price_high_low":
-        sortOption.price = -1;
-        break;
-      case "newest":
-        sortOption.createdAt = -1;
-        break;
-      case "oldest":
-        sortOption.createdAt = 1;
-        break;
-      default:
-        sortOption.createdAt = -1;
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const listings = await Listing.find(query)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(Number(limit));
-
-    const total = await Listing.countDocuments(query);
-
-    res.json({
-      success: true,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / Number(limit)),
-      listings,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
 
 export default router;
