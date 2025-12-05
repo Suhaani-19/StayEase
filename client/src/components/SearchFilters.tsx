@@ -1,4 +1,4 @@
-//client/src/components/SearchFilters.tsx
+// client/src/components/SearchFilters.tsx
 import { useState, useEffect } from "react";
 
 type SearchFiltersProps = {
@@ -7,22 +7,33 @@ type SearchFiltersProps = {
 
 export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
   // Initialize state from URL query params
-  const query = new URLSearchParams(window.location.search);
+  const [keyword, setKeyword] = useState("");
+  const [locationValue, setLocationValue] = useState("");
+  const [type, setType] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [rating, setRating] = useState("");
+  const [sort, setSort] = useState("newest");
 
-  const [keyword, setKeyword] = useState(query.get("keyword") || "");
-  const [locationValue, setLocationValue] = useState(query.get("location") || "");
-  const [type, setType] = useState(query.get("type") || "");
-  const [minPrice, setMinPrice] = useState(query.get("minPrice") || "");
-  const [maxPrice, setMaxPrice] = useState(query.get("maxPrice") || "");
-  const [startDate, setStartDate] = useState(query.get("startDate") || "");
-  const [endDate, setEndDate] = useState(query.get("endDate") || "");
-  const [rating, setRating] = useState(query.get("rating") || "");
-  const [sort, setSort] = useState(query.get("sort") || "newest");
+  // Sync state with URL whenever location.search changes
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    setKeyword(query.get("keyword") || "");
+    setLocationValue(query.get("location") || "");
+    setType(query.get("type") || "");
+    setMinPrice(query.get("minPrice") || "");
+    setMaxPrice(query.get("maxPrice") || "");
+    setStartDate(query.get("startDate") || "");
+    setEndDate(query.get("endDate") || "");
+    setRating(query.get("rating") || "");
+    setSort(query.get("sort") || "newest");
+  }, [window.location.search]);
 
   // Update URL query params
-  const updateURL = () => {
+  const applyFilters = () => {
     const params = new URLSearchParams();
-
     if (keyword) params.set("keyword", keyword);
     if (locationValue) params.set("location", locationValue);
     if (type) params.set("type", type);
@@ -33,12 +44,11 @@ export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
     if (rating) params.set("rating", rating);
     if (sort) params.set("sort", sort);
 
-    // Update the URL with new query params
-    setSearchParams(`/search?${params.toString()}`);
+    setSearchParams(`/search?${params.toString()}`, true); // replace history
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 bg-gray-100 p-4 rounded-lg">
+    <div className="grid grid-cols-1 gap-4 bg-gray-100 p-4 rounded-lg mb-6">
       {/* Keyword */}
       <input
         className="border p-2 rounded"
@@ -127,7 +137,7 @@ export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
       </select>
 
       <button
-        onClick={updateURL}
+        onClick={applyFilters}
         className="bg-black text-white p-2 rounded hover:bg-gray-900"
       >
         Apply Filters

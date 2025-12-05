@@ -1,4 +1,4 @@
-//client/src/pages/SearchResults.tsx
+// client/src/pages/SearchResults.tsx
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";

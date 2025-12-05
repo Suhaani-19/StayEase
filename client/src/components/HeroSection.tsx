@@ -1,4 +1,4 @@
-//client/src/components/HeroSection.tsx
+// client/src/components/HeroSection.tsx
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Calendar, Users } from "lucide-react";
 import { useState } from "react";

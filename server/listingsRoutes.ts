@@ -11,7 +11,7 @@ const router = Router();
 /* -----------------------------------------------------
    🔍 SEARCH LISTINGS (PUBLIC) — MUST BE FIRST
 ----------------------------------------------------- */
-router.get("/search", async (req, res) => {
+router.get("/search", async (req: Request, res: Response) => {
   try {
     const {
       keyword,
@@ -26,45 +26,54 @@ router.get("/search", async (req, res) => {
 
     const filter: any = {};
 
+    // Keyword search
     if (keyword) {
       filter.$or = [
-        { title: new RegExp(keyword as string, "i") },
-        { description: new RegExp(keyword as string, "i") },
-        { location: new RegExp(keyword as string, "i") },
+        { title: { $regex: keyword as string, $options: "i" } },
+        { description: { $regex: keyword as string, $options: "i" } },
+        { location: { $regex: keyword as string, $options: "i" } },
       ];
     }
 
-    if (location) {
-      filter.location = new RegExp(location as string, "i");
-    }
+    // Location filter
+    if (location) filter.location = { $regex: location as string, $options: "i" };
 
-    if (type) {
-      filter.type = type;
-    }
+    // Type filter
+    if (type) filter.type = type;
 
+    // Price filter
     if (minPrice || maxPrice) {
       filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
+      if (!isNaN(Number(minPrice))) filter.price.$gte = Number(minPrice);
+      if (!isNaN(Number(maxPrice))) filter.price.$lte = Number(maxPrice);
     }
 
-    // Overlap logic: listing period must intersect requested period
-    if (startDate || endDate) {
-      const start = startDate ? new Date(startDate as string) : null;
-      const end = endDate ? new Date(endDate as string) : null;
+    // Date filter (availability)
+    let start: Date | null = null;
+    let end: Date | null = null;
 
-      if (start && end) {
-        filter.$and = [
-          { availableFrom: { $lte: end } },
-          { availableTo: { $gte: start } },
-        ];
-      } else if (start) {
-        filter.availableTo = { $gte: start };
-      } else if (end) {
-        filter.availableFrom = { $lte: end };
-      }
+    if (startDate) {
+      const d = new Date(startDate as string);
+      if (!isNaN(d.getTime())) start = d;
     }
 
+    if (endDate) {
+      const d = new Date(endDate as string);
+      if (!isNaN(d.getTime())) end = d;
+    }
+
+    if (start && end) {
+      filter.$and = [
+        { availableFrom: { $lte: end } },
+        { availableTo: { $gte: start } },
+      ];
+    } else if (start) {
+      filter.availableTo = { $gte: start };
+    } else if (end) {
+      filter.availableFrom = { $lte: end };
+    }
+
+    // Sorting
     let sortOption: any = { createdAt: -1 };
     switch (sort) {
       case "oldest":
@@ -80,12 +89,11 @@ router.get("/search", async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    // TEMP: log filter so you can see it in your server console
-    console.log("SEARCH FILTER:", JSON.stringify(filter));
+    console.log("SEARCH FILTER:", JSON.stringify(filter, null, 2));
 
-    const listings = await Listing.find(filter).sort(sortOption);
+    const listings = await Listing.find(filter).populate("owner", "name").sort(sortOption);
     res.json({ listings });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Search error:", err);
     res.status(500).json({ message: "Server error" });
   }
