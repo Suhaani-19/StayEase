@@ -1,3 +1,4 @@
+//client/src/components/BookingCard.tsx
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users } from "lucide-react";

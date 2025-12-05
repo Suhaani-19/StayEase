@@ -1,3 +1,4 @@
+//client/src/pages/BookingEdit.tsx
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import Header from "@/components/Header";
