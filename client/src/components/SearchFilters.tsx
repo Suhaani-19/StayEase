@@ -1,3 +1,4 @@
+//client/src/components/SearchFilters.tsx
 import { useState, useEffect } from "react";
 
 type SearchFiltersProps = {
