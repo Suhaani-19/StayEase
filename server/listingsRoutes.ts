@@ -13,7 +13,17 @@ const router = Router();
 ----------------------------------------------------- */
 router.get("/search", async (req, res) => {
   try {
-    const { keyword, location, minPrice, maxPrice, type } = req.query;
+    const {
+      keyword,
+      location,
+      minPrice,
+      maxPrice,
+      type,
+      startDate,
+      endDate,
+      sort,
+    } = req.query; // rating removed here
+
     const filter: any = {};
 
     if (keyword) {
@@ -33,9 +43,38 @@ router.get("/search", async (req, res) => {
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    const listings = await Listing.find(filter).sort({ createdAt: -1 });
+    // date availability: listing must cover requested range
+    if (startDate || endDate) {
+      filter.availableFrom = filter.availableFrom || {};
+      filter.availableTo = filter.availableTo || {};
 
-    // 🔥 IMPORTANT FIX
+      if (startDate) {
+        const start = new Date(startDate as string);
+        filter.availableFrom.$lte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate as string);
+        filter.availableTo.$gte = end;
+      }
+    }
+
+    // sort handling
+    let sortOption: any = { createdAt: -1 };
+    switch (sort) {
+      case "oldest":
+        sortOption = { createdAt: 1 };
+        break;
+      case "price_low_high":
+        sortOption = { price: 1 };
+        break;
+      case "price_high_low":
+        sortOption = { price: -1 };
+        break;
+      default:
+        sortOption = { createdAt: -1 };
+    }
+
+    const listings = await Listing.find(filter).sort(sortOption);
     res.json({ listings });
   } catch (err) {
     console.error("Search error:", err);
