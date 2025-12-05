@@ -1,4 +1,3 @@
-// client/src/components/HeroSection.tsx
 import { Button } from "@/components/ui/button";
 import { Search, MapPin, Calendar, Users } from "lucide-react";
 import { useState } from "react";
@@ -15,11 +14,14 @@ export default function HeroSection() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
+
+    // Only add params if values exist
     if (location) params.set("location", location);
     if (checkIn) params.set("startDate", checkIn);
     if (checkOut) params.set("endDate", checkOut);
     if (guests) params.set("guests", guests);
 
+    // Navigate to the Search page with query parameters
     navigate(`/search?${params.toString()}`);
   };
 

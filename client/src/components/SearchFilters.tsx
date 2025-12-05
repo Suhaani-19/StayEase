@@ -1,71 +1,35 @@
-// client/src/components/SearchFilters.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-type SearchFiltersProps = {
-  setSearchParams: (path: string, replace?: boolean) => void;
-};
+export default function SearchFilters() {
+  const query = new URLSearchParams(window.location.search);
 
-export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
-  // Initialize state from URL query params
-  const [keyword, setKeyword] = useState("");
-  const [locationValue, setLocationValue] = useState("");
-  const [type, setType] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [rating, setRating] = useState("");
-  const [sort, setSort] = useState("newest");
+  const [locationValue, setLocationValue] = useState(query.get("location") || "");
+  const [type, setType] = useState(query.get("type") || "");
+  const [minPrice, setMinPrice] = useState(query.get("minPrice") || "");
+  const [maxPrice, setMaxPrice] = useState(query.get("maxPrice") || "");
+  const [sort, setSort] = useState(query.get("sort") || "newest");
 
-  // Sync state with URL whenever location.search changes
-  useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    setKeyword(query.get("keyword") || "");
-    setLocationValue(query.get("location") || "");
-    setType(query.get("type") || "");
-    setMinPrice(query.get("minPrice") || "");
-    setMaxPrice(query.get("maxPrice") || "");
-    setStartDate(query.get("startDate") || "");
-    setEndDate(query.get("endDate") || "");
-    setRating(query.get("rating") || "");
-    setSort(query.get("sort") || "newest");
-  }, [window.location.search]);
-
-  // Update URL query params
   const applyFilters = () => {
     const params = new URLSearchParams();
-    if (keyword) params.set("keyword", keyword);
     if (locationValue) params.set("location", locationValue);
     if (type) params.set("type", type);
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
-    if (startDate) params.set("startDate", startDate);
-    if (endDate) params.set("endDate", endDate);
-    if (rating) params.set("rating", rating);
     if (sort) params.set("sort", sort);
 
-    setSearchParams(`/search?${params.toString()}`, true); // replace history
+    // Update browser URL and trigger re-fetch
+    window.history.pushState({}, "", `/search?${params.toString()}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4 bg-gray-100 p-4 rounded-lg mb-6">
-      {/* Keyword */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-100 p-4 rounded-lg">
       <input
         className="border p-2 rounded"
-        placeholder="Search keyword..."
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-      />
-
-      {/* Location */}
-      <input
-        className="border p-2 rounded"
-        placeholder="Location..."
+        placeholder="Location"
         value={locationValue}
         onChange={(e) => setLocationValue(e.target.value)}
       />
-
-      {/* Type */}
       <select
         className="border p-2 rounded"
         value={type}
@@ -77,54 +41,20 @@ export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
         <option value="villa">Villa</option>
         <option value="hotel">Hotel</option>
       </select>
-
-      {/* Price */}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          className="border p-2 rounded"
-          type="number"
-          placeholder="Min Price"
-          value={minPrice}
-          onChange={(e) => setMinPrice(e.target.value)}
-        />
-        <input
-          className="border p-2 rounded"
-          type="number"
-          placeholder="Max Price"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(e.target.value)}
-        />
-      </div>
-
-      {/* Dates */}
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          className="border p-2 rounded"
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
-        <input
-          className="border p-2 rounded"
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-        />
-      </div>
-
-      {/* Rating */}
-      <select
+      <input
         className="border p-2 rounded"
-        value={rating}
-        onChange={(e) => setRating(e.target.value)}
-      >
-        <option value="">Any Rating</option>
-        <option value="3">3★+</option>
-        <option value="4">4★+</option>
-        <option value="4.5">4.5★+</option>
-      </select>
-
-      {/* Sort */}
+        type="number"
+        placeholder="Min Price"
+        value={minPrice}
+        onChange={(e) => setMinPrice(e.target.value)}
+      />
+      <input
+        className="border p-2 rounded"
+        type="number"
+        placeholder="Max Price"
+        value={maxPrice}
+        onChange={(e) => setMaxPrice(e.target.value)}
+      />
       <select
         className="border p-2 rounded"
         value={sort}
@@ -135,10 +65,9 @@ export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
         <option value="price_low_high">Price: Low → High</option>
         <option value="price_high_low">Price: High → Low</option>
       </select>
-
       <button
         onClick={applyFilters}
-        className="bg-black text-white p-2 rounded hover:bg-gray-900"
+        className="bg-black text-white p-2 rounded hover:bg-gray-900 col-span-full md:col-auto"
       >
         Apply Filters
       </button>

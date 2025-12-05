@@ -1,6 +1,4 @@
-// client/src/pages/SearchResults.tsx
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import SearchFilters from "@/components/SearchFilters";
 
@@ -9,34 +7,24 @@ interface Listing {
   title: string;
   location: string;
   price: number;
-  rating?: number;
-  reviewCount?: number;
-  images?: string[];
   type?: string;
+  images?: string[];
+  ownerName?: string;
 }
 
 export default function SearchResults() {
-  const [searchParams, setSearchParams] = useLocation() as [
-    string,
-    (path: string, replace?: boolean) => void
-  ];
-
   const [results, setResults] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch results based on current URL query
   const fetchResults = async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams(searchParams.split("?")[1] || "");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/listings/search?${query.toString()}`
-      );
-
+      const query = window.location.search; // get ?location=...&type=...
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/listings/search${query}`);
       if (!res.ok) throw new Error("Failed to fetch listings");
-
       const data = await res.json();
-      const listings: Listing[] = Array.isArray(data) ? data : data.listings || [];
-      setResults(listings);
+      setResults(data.listings || []);
     } catch (err) {
       console.error(err);
       setResults([]);
@@ -47,13 +35,18 @@ export default function SearchResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [searchParams]);
+
+    // Re-fetch when URL changes (user clicks Apply Filters)
+    const onPopState = () => fetchResults();
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Search Results</h1>
 
-      <SearchFilters setSearchParams={setSearchParams} />
+      <SearchFilters />
 
       {loading ? (
         <p>Loading...</p>
