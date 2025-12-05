@@ -153,5 +153,112 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// ----------------------
+// ADVANCED LISTING SEARCH
+// GET /api/listings/search
+// ----------------------
+router.get("/search", async (req, res) => {
+  try {
+    const {
+      keyword,
+      location,
+      minPrice,
+      maxPrice,
+      type,
+      startDate,
+      endDate,
+      sort,
+      amenities,
+      rating,
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    // Build Mongo query
+    const query: any = {};
+
+    // Keyword search
+    if (keyword) {
+      query.$or = [
+        { title: new RegExp(keyword as string, "i") },
+        { description: new RegExp(keyword as string, "i") },
+        { location: new RegExp(keyword as string, "i") },
+      ];
+    }
+
+    // Location
+    if (location) {
+      query.location = new RegExp(location as string, "i");
+    }
+
+    // Type (apartment | house | villa | hotel)
+    if (type) {
+      query.type = type;
+    }
+
+    // Price range
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    // Availability
+    if (startDate && endDate) {
+      query.availableFrom = { $lte: new Date(startDate as string) };
+      query.availableTo = { $gte: new Date(endDate as string) };
+    }
+
+    // Amenities (array)
+    if (amenities) {
+      query.amenities = { $all: (amenities as string).split(",") };
+    }
+
+    // Rating filter
+    if (rating) {
+      query.rating = { $gte: Number(rating) };
+    }
+
+    // Sorting
+    let sortOption: any = {};
+    switch (sort) {
+      case "price_low_high":
+        sortOption.price = 1;
+        break;
+      case "price_high_low":
+        sortOption.price = -1;
+        break;
+      case "newest":
+        sortOption.createdAt = -1;
+        break;
+      case "oldest":
+        sortOption.createdAt = 1;
+        break;
+      default:
+        sortOption.createdAt = -1;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const listings = await Listing.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Listing.countDocuments(query);
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+      listings,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 export default router;

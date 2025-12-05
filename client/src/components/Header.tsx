@@ -1,3 +1,4 @@
+//client/src/components/Header.tsx
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Search, Menu, User, Heart, Home } from "lucide-react";

@@ -1,106 +1,132 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { useState } from "react";
+//client/src/components/SearchFilters.tsx
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 export default function SearchFilters() {
-  const [priceRange, setPriceRange] = useState([0, 1000]);
-  const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
-  const [amenities, setAmenities] = useState<string[]>([]);
+  const [, setLocation] = useLocation();
+  const query = new URLSearchParams(window.location.search);
 
-  const handlePropertyTypeChange = (type: string, checked: boolean) => {
-    if (checked) {
-      setPropertyTypes([...propertyTypes, type]);
-    } else {
-      setPropertyTypes(propertyTypes.filter((t) => t !== type));
-    }
-    console.log("Property types:", checked ? [...propertyTypes, type] : propertyTypes.filter((t) => t !== type));
-  };
+  const [keyword, setKeyword] = useState(query.get("keyword") || "");
+  const [locationValue, setLocationValue] = useState(query.get("location") || "");
+  const [type, setType] = useState(query.get("type") || "");
+  const [minPrice, setMinPrice] = useState(query.get("minPrice") || "");
+  const [maxPrice, setMaxPrice] = useState(query.get("maxPrice") || "");
+  const [startDate, setStartDate] = useState(query.get("startDate") || "");
+  const [endDate, setEndDate] = useState(query.get("endDate") || "");
+  const [rating, setRating] = useState(query.get("rating") || "");
+  const [sort, setSort] = useState(query.get("sort") || "newest");
 
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    if (checked) {
-      setAmenities([...amenities, amenity]);
-    } else {
-      setAmenities(amenities.filter((a) => a !== amenity));
-    }
-    console.log("Amenities:", checked ? [...amenities, amenity] : amenities.filter((a) => a !== amenity));
-  };
+  const updateURL = () => {
+    const params = new URLSearchParams();
 
-  const handleClearFilters = () => {
-    setPriceRange([0, 1000]);
-    setPropertyTypes([]);
-    setAmenities([]);
-    console.log("Filters cleared");
+    if (keyword) params.set("keyword", keyword);
+    if (locationValue) params.set("location", locationValue);
+    if (type) params.set("type", type);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
+    if (rating) params.set("rating", rating);
+    if (sort) params.set("sort", sort);
+
+    setLocation(`/search?${params.toString()}`);
   };
 
   return (
-    <Card className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Filters</h2>
-        <Button variant="ghost" size="sm" onClick={handleClearFilters} data-testid="button-clear-filters">
-          Clear all
-        </Button>
-      </div>
+    <div className="grid grid-cols-1 gap-4 bg-gray-100 p-4 rounded-lg">
+      {/* Keyword */}
+      <input
+        className="border p-2 rounded"
+        placeholder="Search keyword..."
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+      />
 
-      <div>
-        <h3 className="font-medium mb-4">Price Range</h3>
-        <Slider
-          value={priceRange}
-          onValueChange={setPriceRange}
-          max={1000}
-          step={10}
-          className="mb-2"
-          data-testid="slider-price"
+      {/* Location */}
+      <input
+        className="border p-2 rounded"
+        placeholder="Location..."
+        value={locationValue}
+        onChange={(e) => setLocationValue(e.target.value)}
+      />
+
+      {/* Type */}
+      <select
+        className="border p-2 rounded"
+        value={type}
+        onChange={(e) => setType(e.target.value)}
+      >
+        <option value="">Any Type</option>
+        <option value="apartment">Apartment</option>
+        <option value="house">House</option>
+        <option value="villa">Villa</option>
+        <option value="hotel">Hotel</option>
+      </select>
+
+      {/* Price */}
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          className="border p-2 rounded"
+          type="number"
+          placeholder="Min Price"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
         />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span data-testid="text-price-min">${priceRange[0]}</span>
-          <span data-testid="text-price-max">${priceRange[1]}</span>
-        </div>
+        <input
+          className="border p-2 rounded"
+          type="number"
+          placeholder="Max Price"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+        />
       </div>
 
-      <div>
-        <h3 className="font-medium mb-4">Property Type</h3>
-        <div className="space-y-3">
-          {["Entire place", "Private room", "Shared room", "Hotel room"].map((type) => (
-            <div key={type} className="flex items-center gap-2">
-              <Checkbox
-                id={`type-${type}`}
-                checked={propertyTypes.includes(type)}
-                onCheckedChange={(checked) => handlePropertyTypeChange(type, checked as boolean)}
-                data-testid={`checkbox-type-${type.toLowerCase().replace(/\s/g, "-")}`}
-              />
-              <Label htmlFor={`type-${type}`} className="cursor-pointer">
-                {type}
-              </Label>
-            </div>
-          ))}
-        </div>
+      {/* Dates */}
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          className="border p-2 rounded"
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+        <input
+          className="border p-2 rounded"
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
       </div>
 
-      <div>
-        <h3 className="font-medium mb-4">Amenities</h3>
-        <div className="space-y-3">
-          {["WiFi", "Kitchen", "Parking", "Air conditioning", "Pool", "Gym"].map((amenity) => (
-            <div key={amenity} className="flex items-center gap-2">
-              <Checkbox
-                id={`amenity-${amenity}`}
-                checked={amenities.includes(amenity)}
-                onCheckedChange={(checked) => handleAmenityChange(amenity, checked as boolean)}
-                data-testid={`checkbox-amenity-${amenity.toLowerCase().replace(/\s/g, "-")}`}
-              />
-              <Label htmlFor={`amenity-${amenity}`} className="cursor-pointer">
-                {amenity}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Rating */}
+      <select
+        className="border p-2 rounded"
+        value={rating}
+        onChange={(e) => setRating(e.target.value)}
+      >
+        <option value="">Any Rating</option>
+        <option value="3">3★+</option>
+        <option value="4">4★+</option>
+        <option value="4.5">4.5★+</option>
+      </select>
 
-      <Button className="w-full" data-testid="button-apply-filters">
+      {/* Sort */}
+      <select
+        className="border p-2 rounded"
+        value={sort}
+        onChange={(e) => setSort(e.target.value)}
+      >
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="price_low_high">Price: Low → High</option>
+        <option value="price_high_low">Price: High → Low</option>
+      </select>
+
+      <button
+        onClick={updateURL}
+        className="bg-black text-white p-2 rounded hover:bg-gray-900"
+      >
         Apply Filters
-      </Button>
-    </Card>
+      </button>
+    </div>
   );
 }
