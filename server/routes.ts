@@ -360,6 +360,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/listings", listingsRouter);
   app.use("/api/bookings", bookingsRoutes);
 
+  app.get("/search", (req, res) => {
+    const query = req.url.split("?")[1] || "";
+    res.redirect(`/api/listings/search?${query}`);
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
