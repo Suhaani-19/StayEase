@@ -22,7 +22,7 @@ router.get("/search", async (req, res) => {
       startDate,
       endDate,
       sort,
-    } = req.query; // rating removed here
+    } = req.query;
 
     const filter: any = {};
 
@@ -34,8 +34,13 @@ router.get("/search", async (req, res) => {
       ];
     }
 
-    if (location) filter.location = new RegExp(location as string, "i");
-    if (type) filter.type = type;
+    if (location) {
+      filter.location = new RegExp(location as string, "i");
+    }
+
+    if (type) {
+      filter.type = type;
+    }
 
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -43,22 +48,23 @@ router.get("/search", async (req, res) => {
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // date availability: listing must cover requested range
+    // Overlap logic: listing period must intersect requested period
     if (startDate || endDate) {
-      filter.availableFrom = filter.availableFrom || {};
-      filter.availableTo = filter.availableTo || {};
+      const start = startDate ? new Date(startDate as string) : null;
+      const end = endDate ? new Date(endDate as string) : null;
 
-      if (startDate) {
-        const start = new Date(startDate as string);
-        filter.availableFrom.$lte = start;
-      }
-      if (endDate) {
-        const end = new Date(endDate as string);
-        filter.availableTo.$gte = end;
+      if (start && end) {
+        filter.$and = [
+          { availableFrom: { $lte: end } },
+          { availableTo: { $gte: start } },
+        ];
+      } else if (start) {
+        filter.availableTo = { $gte: start };
+      } else if (end) {
+        filter.availableFrom = { $lte: end };
       }
     }
 
-    // sort handling
     let sortOption: any = { createdAt: -1 };
     switch (sort) {
       case "oldest":
@@ -74,6 +80,9 @@ router.get("/search", async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
+    // TEMP: log filter so you can see it in your server console
+    console.log("SEARCH FILTER:", JSON.stringify(filter));
+
     const listings = await Listing.find(filter).sort(sortOption);
     res.json({ listings });
   } catch (err) {
@@ -81,6 +90,7 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 /* -----------------------------------------------------
