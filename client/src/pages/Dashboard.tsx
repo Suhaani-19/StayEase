@@ -5,10 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Home, Calendar, Heart, Plus } from "lucide-react";
+import { Home, Plus } from "lucide-react";
 import { Link } from "wouter";
 import ListingCard from "@/components/ListingCard";
-import AddListingForm from "../components/AddListingForm";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
@@ -27,28 +26,26 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ✅ FIXED: Fetch MY listings only (with token)
+  // Fetch user's own listings
   useEffect(() => {
     const fetchListings = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          console.log("No token, redirecting to login");
           window.location.href = "/login";
           return;
         }
 
         const response = await fetch(`${API_URL}/api/listings`, {
           headers: {
-            Authorization: `Bearer ${token}`,  // ✅ sends token
+            Authorization: `Bearer ${token}`,
           },
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setRealListings(data);
         } else if (response.status === 401) {
-          console.log("Token invalid, redirecting to login");
           window.location.href = "/login";
         }
       } catch (error) {
@@ -57,6 +54,7 @@ export default function Dashboard() {
         setLoadingListings(false);
       }
     };
+
     fetchListings();
   }, []);
 
@@ -73,26 +71,23 @@ export default function Dashboard() {
       const res = await fetch(`${API_URL}/api/listings/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,  // ✅ sends token
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || data.error || "Failed to delete listing");
+        throw new Error(data.message || "Failed to delete listing");
       }
 
-      // Remove from UI
       setRealListings((prev) => prev.filter((l) => (l._id || l.id) !== id));
     } catch (err: any) {
-      alert(err.message || "Error deleting listing");
+      alert(err.message);
     }
   };
 
   const stats = [
-    { label: "Total Bookings", value: "8", icon: Calendar },
     { label: "Active Listings", value: `${realListings.length}`, icon: Home },
-    { label: "Saved Favorites", value: "12", icon: Heart },
   ];
 
   return (
@@ -106,12 +101,10 @@ export default function Dashboard() {
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold">Welcome back, {userName}</h1>
-              <p className="text-muted-foreground">
-                Manage your bookings and listings
-              </p>
+              <p className="text-muted-foreground">Manage your properties</p>
             </div>
           </div>
-          <Button asChild data-testid="button-create-listing">
+          <Button asChild>
             <Link href="/create-listing">
               <Plus className="h-4 w-4 mr-2" />
               Create Listing
@@ -124,17 +117,8 @@ export default function Dashboard() {
             <Card key={index} className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {stat.label}
-                  </p>
-                  <p
-                    className="text-3xl font-bold"
-                    data-testid={`text-${stat.label
-                      .toLowerCase()
-                      .replace(/\s/g, "-")}`}
-                  >
-                    {stat.value}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
+                  <p className="text-3xl font-bold">{stat.value}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
                   <stat.icon className="h-6 w-6 text-primary" />
@@ -145,10 +129,10 @@ export default function Dashboard() {
         </div>
 
         <Tabs defaultValue="listings" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="listings">My Properties</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
           </TabsList>
+
           <TabsContent value="listings" className="mt-6">
             {loadingListings ? (
               <p className="text-muted-foreground">Loading your listings...</p>
@@ -175,9 +159,6 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-          </TabsContent>
-          <TabsContent value="bookings" className="mt-6">
-            <p className="text-muted-foreground">Bookings coming soon...</p>
           </TabsContent>
         </Tabs>
       </main>
