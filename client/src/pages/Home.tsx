@@ -1,3 +1,4 @@
+//client/src/pages/Home.tsx
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";

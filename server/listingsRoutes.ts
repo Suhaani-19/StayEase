@@ -13,14 +13,7 @@ const router = Router();
 ----------------------------------------------------- */
 router.get("/search", async (req, res) => {
   try {
-    const {
-      keyword,
-      location,
-      minPrice,
-      maxPrice,
-      type,
-    } = req.query;
-
+    const { keyword, location, minPrice, maxPrice, type } = req.query;
     const filter: any = {};
 
     if (keyword) {
@@ -41,12 +34,15 @@ router.get("/search", async (req, res) => {
     }
 
     const listings = await Listing.find(filter).sort({ createdAt: -1 });
-    res.json(listings);
+
+    // 🔥 IMPORTANT FIX
+    res.json({ listings });
   } catch (err) {
     console.error("Search error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 /* -----------------------------------------------------
    PUBLIC → Get ALL listings (no login)

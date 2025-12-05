@@ -1,4 +1,3 @@
-//client/src/pages/SearchResults.tsx
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
@@ -16,7 +15,6 @@ interface Listing {
 }
 
 export default function SearchResults() {
-  // ✅ Explicitly type setSearchParams to fix TypeScript red underline
   const [searchParams, setSearchParams] = useLocation() as [
     string,
     (path: string, replace?: boolean) => void
@@ -30,23 +28,13 @@ export default function SearchResults() {
     try {
       const query = new URLSearchParams(searchParams.split("?")[1] || "");
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/listings/search?${query.toString()}`
+        `${import.meta.env.VITE_API_URL}/api/listings/search?${query.toString()}`
       );
 
       if (!res.ok) throw new Error("Failed to fetch listings");
 
       const data = await res.json();
-      const listings: Listing[] = (data.listings || []).map((l: any) => ({
-        _id: l._id,
-        title: l.title,
-        location: l.location,
-        price: l.price,
-        rating: l.rating,
-        reviewCount: l.reviewCount,
-        images: l.images,
-        type: l.type,
-      }));
-
+      const listings: Listing[] = Array.isArray(data) ? data : data.listings || [];
       setResults(listings);
     } catch (err) {
       console.error(err);
@@ -73,17 +61,7 @@ export default function SearchResults() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {results.map((listing) => (
-            <ListingCard
-              key={listing._id}
-              _id={listing._id}
-              title={listing.title}
-              location={listing.location}
-              price={listing.price}
-              rating={listing.rating}
-              reviewCount={listing.reviewCount}
-              images={listing.images}
-              type={listing.type}
-            />
+            <ListingCard key={listing._id} {...listing} />
           ))}
         </div>
       )}
