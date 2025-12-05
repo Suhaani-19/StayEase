@@ -25,8 +25,9 @@ export default function Home() {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/listings`);
+        const res = await fetch(`${API_URL}/api/listings/all`);
         if (!res.ok) throw new Error("Failed to fetch listings");
+
         const data = await res.json();
         setListings(data);
       } catch (err) {
@@ -35,6 +36,7 @@ export default function Home() {
         setLoading(false);
       }
     };
+
     fetchListings();
   }, []);
 
@@ -51,9 +53,7 @@ export default function Home() {
               Discover our most loved accommodations
             </p>
           </div>
-          <Button variant="outline" data-testid="button-view-all">
-            View All
-          </Button>
+          <Button variant="outline">View All</Button>
         </div>
 
         {loading ? (
