@@ -1,14 +1,24 @@
-// server/listingsRoutes.ts
 import { Router, Request, Response } from "express";
 import mongoose from "mongoose";
-import { Listing } from "./models/Listing.js"; // adjust path to your model
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
+import { Listing } from "./models/Listing.js";
 
 const router = Router();
 
-// ✅ GET /api/listings - List all listings
-router.get("/", async (_req: Request, res: Response) => {
+// ✅ GET /api/listings - List MY listings only (protected)
+router.get("/", async (req: Request, res: Response) => {
   try {
-    const listings = await Listing.find().populate("owner", "name");
+    const token = req.headers.authorization?.replace("Bearer ", "").trim();
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const userId = decoded.id;
+
+    const listings = await Listing.find({ owner: userId }).populate("owner", "name");
     res.json(listings);
   } catch (error: any) {
     console.error("Get listings error:", error);
@@ -19,7 +29,6 @@ router.get("/", async (_req: Request, res: Response) => {
 // ✅ GET /api/listings/:id - Get single listing
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    // ✅ VALIDATE ObjectId FIRST
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ 
         message: 'Invalid listing ID. Must be a valid MongoDB ObjectId (24 hex characters).' 
@@ -42,7 +51,16 @@ router.get("/:id", async (req: Request, res: Response) => {
 // ✅ POST /api/listings - Create listing (protected)
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const listing = new Listing(req.body);
+    const token = req.headers.authorization?.replace("Bearer ", "").trim();
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const listing = new Listing({
+      ...req.body,
+      owner: decoded.id  // ✅ auto-assign current user as owner
+    });
     await listing.save();
     await listing.populate("owner", "name");
     res.status(201).json(listing);
@@ -59,14 +77,21 @@ router.put("/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid listing ID" });
     }
 
-    const listing = await Listing.findByIdAndUpdate(
-      req.params.id,
+    const token = req.headers.authorization?.replace("Bearer ", "").trim();
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    
+    const listing = await Listing.findOneAndUpdate(
+      { _id: req.params.id, owner: decoded.id },  // ✅ only owner can edit
       req.body,
       { new: true, runValidators: true }
     ).populate("owner", "name");
 
     if (!listing) {
-      return res.status(404).json({ message: "Listing not found" });
+      return res.status(403).json({ message: "Not authorized or listing not found" });
     }
 
     res.json(listing);
@@ -83,10 +108,20 @@ router.delete("/:id", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid listing ID" });
     }
 
-    const listing = await Listing.findByIdAndDelete(req.params.id);
+    const token = req.headers.authorization?.replace("Bearer ", "").trim();
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    
+    const listing = await Listing.findOneAndDelete({
+      _id: req.params.id,
+      owner: decoded.id  // ✅ only owner can delete
+    });
     
     if (!listing) {
-      return res.status(404).json({ message: "Listing not found" });
+      return res.status(403).json({ message: "Not authorized or listing not found" });
     }
 
     res.json({ message: "Listing deleted successfully" });

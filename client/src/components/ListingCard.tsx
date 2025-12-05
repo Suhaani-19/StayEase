@@ -1,3 +1,5 @@
+//client/src/components/ListingCard.tsx
+
 import { Link } from "wouter";
 import { MapPin, Star } from "lucide-react";
 

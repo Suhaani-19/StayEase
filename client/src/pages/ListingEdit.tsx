@@ -1,3 +1,4 @@
+//client/src/pages/ListingEdit.tsx
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import Header from "@/components/Header";

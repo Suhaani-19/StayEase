@@ -1,3 +1,4 @@
+//client/src/pages/Dashboard.tsx
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { Card } from "@/components/ui/card";
@@ -6,18 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Home, Calendar, Heart, Plus } from "lucide-react";
 import { Link } from "wouter";
-import cabinImage from "@assets/generated_images/Mountain_cabin_listing_photo_0428adcd.png";
-import villaImage from "@assets/generated_images/Beachfront_villa_listing_photo_b95534bf.png";
 import ListingCard from "@/components/ListingCard";
 import AddListingForm from "../components/AddListingForm";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "https://stayease-1-mijo.onrender.com";
 
 export default function Dashboard() {
   const [userName, setUserName] = useState("User");
   const [userInitial, setUserInitial] = useState("U");
-
   const [realListings, setRealListings] = useState<any[]>([]);
   const [loadingListings, setLoadingListings] = useState(true);
 
@@ -30,14 +27,29 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Fetch real listings from backend
+  // ✅ FIXED: Fetch MY listings only (with token)
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/listings`);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.log("No token, redirecting to login");
+          window.location.href = "/login";
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/listings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,  // ✅ sends token
+          },
+        });
+        
         if (response.ok) {
           const data = await response.json();
           setRealListings(data);
+        } else if (response.status === 401) {
+          console.log("Token invalid, redirecting to login");
+          window.location.href = "/login";
         }
       } catch (error) {
         console.error("Failed to fetch listings:", error);
@@ -57,8 +69,12 @@ export default function Dashboard() {
     if (!confirmed) return;
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/api/listings/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,  // ✅ sends token
+        },
       });
 
       if (!res.ok) {
@@ -82,7 +98,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -129,133 +144,40 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <Tabs defaultValue="listings" className="space-y-6">
-          <TabsList data-testid="tabs-dashboard">
-            <TabsTrigger value="listings" data-testid="tab-listings">
-              My Listings
-            </TabsTrigger>
-            <TabsTrigger value="bookings" data-testid="tab-bookings">
-              My Bookings
-            </TabsTrigger>
-            <TabsTrigger value="favorites" data-testid="tab-favorites">
-              Favorites
-            </TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">
-              Settings
-            </TabsTrigger>
+        <Tabs defaultValue="listings" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="listings">My Properties</TabsTrigger>
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
           </TabsList>
-
-          {/* LISTINGS TAB */}
-          <TabsContent value="listings" className="space-y-6">
-            <AddListingForm />
-
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Your Properties</h2>
-              <Button variant="outline" data-testid="button-manage-listings">
-                Manage All
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {loadingListings ? (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  Loading your listings...
-                </div>
-              ) : realListings.length > 0 ? (
-                realListings.map((listing: any) => {
-                  // Handles both owner: "userId" and owner: { _id: "userId", ... }
-                  const ownerId =
-                    typeof listing.owner === "string"
-                      ? listing.owner
-                      : listing.owner?._id;
-
-                  const isOwner = ownerId === localStorage.getItem("userId");
-
-                  return (
-                    <ListingCard
-                      key={listing._id || listing.id}
-                      {...listing}
-                      images={
-                        listing.images && listing.images.length > 0
-                          ? listing.images
-                          : [cabinImage, villaImage]
-                      }
-                      onEdit={isOwner ? handleEditListing : undefined}
-                      onDelete={isOwner ? handleDeleteListing : undefined}
-                    />
-                  );
-                })
-              ) : (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No listings yet. Create one above!
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* BOOKINGS TAB */}
-          <TabsContent value="bookings" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Upcoming Bookings</h2>
-              <Link href="/bookings">
-                <Button
-                  variant="outline"
-                  data-testid="button-view-all-bookings"
-                >
-                  View All
+          <TabsContent value="listings" className="mt-6">
+            {loadingListings ? (
+              <p className="text-muted-foreground">Loading your listings...</p>
+            ) : realListings.length === 0 ? (
+              <div className="text-center py-12 bg-muted/30 rounded-xl">
+                <Home className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No listings yet. Create your first one!</p>
+                <Button asChild className="mt-4">
+                  <Link href="/create-listing">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Listing
+                  </Link>
                 </Button>
-              </Link>
-            </div>
-            <Card className="p-8 text-center">
-              <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No upcoming bookings</p>
-            </Card>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {realListings.map((listing) => (
+                  <ListingCard
+                    key={listing._id || listing.id}
+                    {...listing}
+                    onEdit={handleEditListing}
+                    onDelete={handleDeleteListing}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
-
-          {/* FAVORITES TAB */}
-          <TabsContent value="favorites" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Saved Listings</h2>
-            </div>
-            <Card className="p-8 text-center">
-              <Heart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No saved listings yet</p>
-            </Card>
-          </TabsContent>
-
-          {/* SETTINGS TAB */}
-          <TabsContent value="settings" className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
-            <Card className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
-                <input
-                  type="text"
-                  defaultValue={userName}
-                  className="w-full h-9 px-3 rounded-md border bg-background"
-                  data-testid="input-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <input
-                  type="email"
-                  defaultValue="john@example.com"
-                  className="w-full h-9 px-3 rounded-md border bg-background"
-                  data-testid="input-email"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Phone</label>
-                <input
-                  type="tel"
-                  defaultValue="+1 (555) 123-4567"
-                  className="w-full h-9 px-3 rounded-md border bg-background"
-                  data-testid="input-phone"
-                />
-              </div>
-              <Button data-testid="button-save-settings">Save Changes</Button>
-            </Card>
+          <TabsContent value="bookings" className="mt-6">
+            <p className="text-muted-foreground">Bookings coming soon...</p>
           </TabsContent>
         </Tabs>
       </main>

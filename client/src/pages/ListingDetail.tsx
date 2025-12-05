@@ -1,3 +1,4 @@
+//client/src/pages/ListingDetail.tsx
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import BookingCard from "@/components/BookingCard";
