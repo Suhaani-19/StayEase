@@ -1,9 +1,11 @@
-//client/src/components/SearchFilters.tsx
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 
-export default function SearchFilters() {
-  const [, setLocation] = useLocation();
+type SearchFiltersProps = {
+  setSearchParams: (path: string, replace?: boolean) => void;
+};
+
+export default function SearchFilters({ setSearchParams }: SearchFiltersProps) {
+  // Initialize state from URL query params
   const query = new URLSearchParams(window.location.search);
 
   const [keyword, setKeyword] = useState(query.get("keyword") || "");
@@ -16,6 +18,7 @@ export default function SearchFilters() {
   const [rating, setRating] = useState(query.get("rating") || "");
   const [sort, setSort] = useState(query.get("sort") || "newest");
 
+  // Update URL query params
   const updateURL = () => {
     const params = new URLSearchParams();
 
@@ -29,7 +32,8 @@ export default function SearchFilters() {
     if (rating) params.set("rating", rating);
     if (sort) params.set("sort", sort);
 
-    setLocation(`/search?${params.toString()}`);
+    // Update the URL with new query params
+    setSearchParams(`/search?${params.toString()}`);
   };
 
   return (

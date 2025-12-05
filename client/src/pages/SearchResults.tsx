@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import SearchFilters from "@/components/SearchFilters";
 
-// Define a type that matches ListingCard props
 interface Listing {
   _id: string;
   title: string;
@@ -16,8 +15,11 @@ interface Listing {
 }
 
 export default function SearchResults() {
-  const [searchParams] = useLocation();
-  const query = new URLSearchParams(window.location.search);
+  // ✅ Explicitly type setSearchParams to fix TypeScript red underline
+  const [searchParams, setSearchParams] = useLocation() as [
+    string,
+    (path: string, replace?: boolean) => void
+  ];
 
   const [results, setResults] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,17 +27,14 @@ export default function SearchResults() {
   const fetchResults = async () => {
     setLoading(true);
     try {
+      const query = new URLSearchParams(searchParams.split("?")[1] || "");
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/listings/search?` + query.toString()
+        `${import.meta.env.VITE_API_URL}/listings/search?${query.toString()}`
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch listings");
-      }
+      if (!res.ok) throw new Error("Failed to fetch listings");
 
       const data = await res.json();
-
-      // Map API results to Listing type for ListingCard
       const listings: Listing[] = (data.listings || []).map((l: any) => ({
         _id: l._id,
         title: l.title,
@@ -48,8 +47,8 @@ export default function SearchResults() {
       }));
 
       setResults(listings);
-    } catch (error) {
-      console.error("Error fetching listings:", error);
+    } catch (err) {
+      console.error(err);
       setResults([]);
     } finally {
       setLoading(false);
@@ -58,13 +57,13 @@ export default function SearchResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [window.location.search]);
+  }, [searchParams]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Search Results</h1>
 
-      <SearchFilters />
+      <SearchFilters setSearchParams={setSearchParams} />
 
       {loading ? (
         <p>Loading...</p>
